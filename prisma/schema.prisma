@@ -1,0 +1,114 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum StatusCliente {
+  ATIVO
+  INATIVO
+}
+
+enum Periodicidade {
+  MENSAL
+  TRIMESTRAL
+  UNICO
+  POR_FASE
+}
+
+enum StatusContrato {
+  ATIVO
+  ENCERRADO
+  SUSPENSO
+}
+
+enum StatusRecebimento {
+  PENDENTE
+  PAGO
+  ATRASADO
+}
+
+enum OrigemRecebimento {
+  GERADO_AUTOMATICAMENTE
+  LANCADO_MANUALMENTE
+}
+
+enum TipoCompromisso {
+  ENTREGA
+  REUNIAO
+  PRAZO_INTERNO
+  ATENDIMENTO_RECORRENTE
+}
+
+enum StatusCompromisso {
+  PENDENTE
+  CONCLUIDO
+  CANCELADO
+}
+
+model Cliente {
+  id             String        @id @default(cuid())
+  nome           String
+  cnpj           String?
+  contatoNome    String?
+  contatoEmail   String?
+  contatoTelefone String?
+  setor          String?
+  status         StatusCliente @default(ATIVO)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  contratos      Contrato[]
+}
+
+model Contrato {
+  id             String          @id @default(cuid())
+  cliente        Cliente         @relation(fields: [clienteId], references: [id])
+  clienteId      String
+  numero         String
+  escopo         String?
+  valor          Float
+  periodicidade  Periodicidade
+  dataInicio     DateTime
+  dataFim        DateTime?
+  status         StatusContrato  @default(ATIVO)
+  diaAtendimento String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  recebimentos   Recebimento[]
+  compromissos   Compromisso[]
+}
+
+model Recebimento {
+  id            String            @id @default(cuid())
+  contrato      Contrato          @relation(fields: [contratoId], references: [id])
+  contratoId    String
+  valorPrevisto Float
+  valorRealizado Float?
+  dataPrevista  DateTime
+  dataRealizada DateTime?
+  status        StatusRecebimento @default(PENDENTE)
+  origem        OrigemRecebimento @default(GERADO_AUTOMATICAMENTE)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model Compromisso {
+  id          String            @id @default(cuid())
+  contrato    Contrato?         @relation(fields: [contratoId], references: [id])
+  contratoId  String?
+  titulo      String
+  descricao   String?
+  data        DateTime
+  tipo        TipoCompromisso
+  status      StatusCompromisso @default(PENDENTE)
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
