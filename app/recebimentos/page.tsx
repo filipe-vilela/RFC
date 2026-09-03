@@ -2,17 +2,42 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { deleteRecebimento, marcarComoPago } from "./actions";
 import { DeleteButton } from "../components/DeleteButton";
+import { FilterBar } from "../components/FilterBar";
 import { ORIGEM_RECEBIMENTO, STATUS_RECEBIMENTO } from "@/lib/enums";
 import { buttonPrimaryClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
 import { formatData, formatMoeda } from "@/lib/format";
+import { paramString } from "@/lib/query-params";
+import type { Prisma, StatusRecebimento } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
-export default async function RecebimentosPage() {
-  const recebimentos = await prisma.recebimento.findMany({
-    orderBy: { dataPrevista: "desc" },
-    include: { contrato: { include: { cliente: true } } },
-  });
+export default async function RecebimentosPage({
+  searchParams,
+}: PageProps<"/recebimentos">) {
+  const params = await searchParams;
+  const clienteId = paramString(params.clienteId);
+  const status = paramString(params.status);
+  const de = paramString(params.de);
+  const ate = paramString(params.ate);
+
+  const where: Prisma.RecebimentoWhereInput = {};
+  if (clienteId) where.contrato = { clienteId };
+  if (status) where.status = status as StatusRecebimento;
+  if (de || ate) {
+    where.dataPrevista = {
+      ...(de ? { gte: new Date(de) } : {}),
+      ...(ate ? { lte: new Date(ate) } : {}),
+    };
+  }
+
+  const [recebimentos, clientes] = await Promise.all([
+    prisma.recebimento.findMany({
+      where,
+      orderBy: { dataPrevista: "desc" },
+      include: { contrato: { include: { cliente: true } } },
+    }),
+    prisma.cliente.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -23,8 +48,21 @@ export default async function RecebimentosPage() {
         </Link>
       </div>
 
+      <FilterBar
+        action="/recebimentos"
+        cliente={{
+          value: clienteId,
+          options: clientes.map((c) => ({ value: c.id, label: c.nome })),
+        }}
+        status={{
+          value: status,
+          options: Object.entries(STATUS_RECEBIMENTO).map(([value, label]) => ({ value, label })),
+        }}
+        periodo={{ deValue: de, ateValue: ate, label: "Data prevista" }}
+      />
+
       {recebimentos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum recebimento cadastrado.</p>
+        <p className="text-zinc-600">Nenhum recebimento encontrado para os filtros selecionados.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">

@@ -2,20 +2,43 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { deleteContrato } from "./actions";
 import { DeleteButton } from "../components/DeleteButton";
+import { FilterBar } from "../components/FilterBar";
 import { PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
 import { formatData, formatMoeda } from "@/lib/format";
+import { paramString } from "@/lib/query-params";
+import type { Prisma, StatusContrato } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export default async function ContratosPage({
   searchParams,
 }: PageProps<"/contratos">) {
-  const { erro } = await searchParams;
-  const contratos = await prisma.contrato.findMany({
-    orderBy: { dataInicio: "desc" },
-    include: { cliente: true },
-  });
+  const params = await searchParams;
+  const erro = params.erro;
+  const clienteId = paramString(params.clienteId);
+  const status = paramString(params.status);
+  const de = paramString(params.de);
+  const ate = paramString(params.ate);
+
+  const where: Prisma.ContratoWhereInput = {};
+  if (clienteId) where.clienteId = clienteId;
+  if (status) where.status = status as StatusContrato;
+  if (de || ate) {
+    where.dataInicio = {
+      ...(de ? { gte: new Date(de) } : {}),
+      ...(ate ? { lte: new Date(ate) } : {}),
+    };
+  }
+
+  const [contratos, clientes] = await Promise.all([
+    prisma.contrato.findMany({
+      where,
+      orderBy: { dataInicio: "desc" },
+      include: { cliente: true },
+    }),
+    prisma.cliente.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -32,8 +55,21 @@ export default async function ContratosPage({
         </p>
       )}
 
+      <FilterBar
+        action="/contratos"
+        cliente={{
+          value: clienteId,
+          options: clientes.map((c) => ({ value: c.id, label: c.nome })),
+        }}
+        status={{
+          value: status,
+          options: Object.entries(STATUS_CONTRATO).map(([value, label]) => ({ value, label })),
+        }}
+        periodo={{ deValue: de, ateValue: ate, label: "Início" }}
+      />
+
       {contratos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum contrato cadastrado.</p>
+        <p className="text-zinc-600">Nenhum contrato encontrado para os filtros selecionados.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">

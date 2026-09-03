@@ -117,7 +117,9 @@ fiscal, CRM completo, autenticação/multiusuário.
       recebido vs. previsto no mês, contratos ativos, inadimplência
       (atrasados + pendentes vencidos) e próximos prazos da agenda; corrigido
       bug em "Marcar como pago" que não preenchia `valorRealizado`
-- [ ] Passo 5 — filtros (cliente, status, período)
+- [x] Passo 5 — filtros por cliente, status e período nas listagens de
+      Contratos, Recebimentos e Agenda (`FilterBar`, GET + `searchParams`);
+      Clientes tem filtro por status
 - [ ] Passo 6 — calendário de atendimento
 - [ ] Passo 7 — ajustes visuais e navegação final
 

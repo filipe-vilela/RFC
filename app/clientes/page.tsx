@@ -2,16 +2,23 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { deleteCliente } from "./actions";
 import { DeleteButton } from "../components/DeleteButton";
+import { FilterBar } from "../components/FilterBar";
 import { STATUS_CLIENTE } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
+import { paramString } from "@/lib/query-params";
+import type { StatusCliente } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
 export default async function ClientesPage({
   searchParams,
 }: PageProps<"/clientes">) {
-  const { erro } = await searchParams;
+  const params = await searchParams;
+  const erro = params.erro;
+  const status = paramString(params.status);
+
   const clientes = await prisma.cliente.findMany({
+    where: status ? { status: status as StatusCliente } : undefined,
     orderBy: { nome: "asc" },
   });
 
@@ -30,8 +37,16 @@ export default async function ClientesPage({
         </p>
       )}
 
+      <FilterBar
+        action="/clientes"
+        status={{
+          value: status,
+          options: Object.entries(STATUS_CLIENTE).map(([value, label]) => ({ value, label })),
+        }}
+      />
+
       {clientes.length === 0 ? (
-        <p className="text-zinc-600">Nenhum cliente cadastrado.</p>
+        <p className="text-zinc-600">Nenhum cliente encontrado para os filtros selecionados.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">

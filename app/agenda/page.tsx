@@ -2,17 +2,42 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { deleteCompromisso } from "./actions";
 import { DeleteButton } from "../components/DeleteButton";
+import { FilterBar } from "../components/FilterBar";
 import { STATUS_COMPROMISSO, TIPO_COMPROMISSO } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
 import { formatData } from "@/lib/format";
+import { paramString } from "@/lib/query-params";
+import type { Prisma, StatusCompromisso } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
 
-export default async function AgendaPage() {
-  const compromissos = await prisma.compromisso.findMany({
-    orderBy: { data: "asc" },
-    include: { contrato: { include: { cliente: true } } },
-  });
+export default async function AgendaPage({
+  searchParams,
+}: PageProps<"/agenda">) {
+  const params = await searchParams;
+  const clienteId = paramString(params.clienteId);
+  const status = paramString(params.status);
+  const de = paramString(params.de);
+  const ate = paramString(params.ate);
+
+  const where: Prisma.CompromissoWhereInput = {};
+  if (clienteId) where.contrato = { clienteId };
+  if (status) where.status = status as StatusCompromisso;
+  if (de || ate) {
+    where.data = {
+      ...(de ? { gte: new Date(de) } : {}),
+      ...(ate ? { lte: new Date(ate) } : {}),
+    };
+  }
+
+  const [compromissos, clientes] = await Promise.all([
+    prisma.compromisso.findMany({
+      where,
+      orderBy: { data: "asc" },
+      include: { contrato: { include: { cliente: true } } },
+    }),
+    prisma.cliente.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -23,8 +48,21 @@ export default async function AgendaPage() {
         </Link>
       </div>
 
+      <FilterBar
+        action="/agenda"
+        cliente={{
+          value: clienteId,
+          options: clientes.map((c) => ({ value: c.id, label: c.nome })),
+        }}
+        status={{
+          value: status,
+          options: Object.entries(STATUS_COMPROMISSO).map(([value, label]) => ({ value, label })),
+        }}
+        periodo={{ deValue: de, ateValue: ate, label: "Data" }}
+      />
+
       {compromissos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum compromisso cadastrado.</p>
+        <p className="text-zinc-600">Nenhum compromisso encontrado para os filtros selecionados.</p>
       ) : (
         <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
           <table className="w-full text-sm">
