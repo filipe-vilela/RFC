@@ -64,6 +64,22 @@ Incluído:
 Fora do escopo (não implementar sem pedido explícito): emissão de nota
 fiscal, CRM completo, autenticação/multiusuário.
 
+### Geração automática de recebimentos (`lib/recebimentos.ts`)
+
+- Roda dentro de uma transação, logo após criar/atualizar um contrato
+  (`app/contratos/actions.ts`).
+- MENSAL/TRIMESTRAL: uma parcela a cada 1/3 meses, de `dataInicio` até
+  `dataFim` (ou até `dataInicio` + 12 meses, se não houver `dataFim`).
+  UNICO: uma única parcela em `dataInicio`. POR_FASE: nenhuma parcela
+  automática — fica a critério de lançamento manual, já que fases não têm
+  data previsível.
+- A sincronização casa recebimentos existentes com a programação atual
+  pela `dataPrevista` exata. Uma parcela com status `PAGO` nunca é alterada
+  nem removida, mesmo que a edição do contrato a tire da programação
+  (ex.: redução de `dataFim` depois de um pagamento). Parcelas pendentes
+  têm o `valorPrevisto` atualizado se o valor do contrato mudar; parcelas
+  que saem da programação e ainda não foram pagas são removidas.
+
 ## Como conduzir o desenvolvimento
 
 - Seguir o roteiro acima **um passo por vez**, sem pular etapas
@@ -81,7 +97,12 @@ fiscal, CRM completo, autenticação/multiusuário.
       `app/layout.tsx`; ações de exclusão bloqueadas com mensagem amigável
       quando há registros filhos (FK constraint); recebimento manual tem
       botão rápido "Marcar como pago"
-- [ ] Passo 3 — geração automática de recebimentos previstos
+- [x] Passo 3 — geração automática de recebimentos previstos ao
+      criar/editar um contrato (`lib/recebimentos.ts`); contratos "por
+      fase" ficam de fora (recebimentos lançados manualmente); recebimentos
+      já pagos nunca são alterados ou removidos ao editar o contrato;
+      recebimentos pendentes têm o `valorPrevisto` atualizado se o valor do
+      contrato mudar
 - [ ] Passo 4 — dashboard financeiro
 - [ ] Passo 5 — filtros (cliente, status, período)
 - [ ] Passo 6 — calendário de atendimento

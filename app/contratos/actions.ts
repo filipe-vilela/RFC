@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { isForeignKeyConstraintError } from "@/lib/db-errors";
+import { sincronizarRecebimentosAutomaticos } from "@/lib/recebimentos";
 import type { Periodicidade, StatusContrato } from "@/app/generated/prisma/client";
 
 function readContratoFormData(formData: FormData) {
@@ -24,15 +25,23 @@ function readContratoFormData(formData: FormData) {
 
 export async function createContrato(formData: FormData) {
   const data = readContratoFormData(formData);
-  await prisma.contrato.create({ data });
+  await prisma.$transaction(async (tx) => {
+    const contrato = await tx.contrato.create({ data });
+    await sincronizarRecebimentosAutomaticos(tx, contrato.id, contrato);
+  });
   revalidatePath("/contratos");
+  revalidatePath("/recebimentos");
   redirect("/contratos");
 }
 
 export async function updateContrato(id: string, formData: FormData) {
   const data = readContratoFormData(formData);
-  await prisma.contrato.update({ where: { id }, data });
+  await prisma.$transaction(async (tx) => {
+    const contrato = await tx.contrato.update({ where: { id }, data });
+    await sincronizarRecebimentosAutomaticos(tx, contrato.id, contrato);
+  });
   revalidatePath("/contratos");
+  revalidatePath("/recebimentos");
   redirect("/contratos");
 }
 
