@@ -76,7 +76,11 @@ fiscal, CRM completo, autenticação/multiusuário.
 
 - [x] Passo 1 — projeto Next.js + Tailwind + Prisma, schema definido,
       migração inicial aplicada, seed de teste rodando
-- [ ] Passo 2 — páginas de listagem + formulário CRUD por entidade
+- [x] Passo 2 — páginas de listagem + formulário CRUD por entidade
+      (Cliente, Contrato, Recebimento, Compromisso); navegação básica em
+      `app/layout.tsx`; ações de exclusão bloqueadas com mensagem amigável
+      quando há registros filhos (FK constraint); recebimento manual tem
+      botão rápido "Marcar como pago"
 - [ ] Passo 3 — geração automática de recebimentos previstos
 - [ ] Passo 4 — dashboard financeiro
 - [ ] Passo 5 — filtros (cliente, status, período)
