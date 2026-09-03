@@ -41,9 +41,16 @@ export async function deleteRecebimento(id: string) {
 }
 
 export async function marcarComoPago(id: string) {
+  const recebimento = await prisma.recebimento.findUniqueOrThrow({
+    where: { id },
+  });
   await prisma.recebimento.update({
     where: { id },
-    data: { status: "PAGO", dataRealizada: new Date() },
+    data: {
+      status: "PAGO",
+      dataRealizada: new Date(),
+      valorRealizado: recebimento.valorRealizado ?? recebimento.valorPrevisto,
+    },
   });
   revalidatePath("/recebimentos");
 }

@@ -29,6 +29,16 @@ atendimento, com uma visão financeira consolidada.
   `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`).
   Nada disso afeta o escopo atual (sem middleware, sem cache tags), mas
   vale reler antes de usar essas APIs.
+- **Toda página que lê do Prisma diretamente precisa de
+  `export const dynamic = "force-dynamic"`.** O App Router só detecta
+  dinamismo automaticamente a partir de `cookies()`/`headers()`/
+  `searchParams` ou `fetch()`; uma chamada direta ao Prisma não conta, então
+  sem essa flag a página é pré-renderizada uma vez no build e fica presa
+  aos dados daquele momento (bug real encontrado testando `npm run build &&
+  npm run start` — o dashboard e as listagens sem `searchParams` estavam
+  sendo servidas como HTML estático). As páginas `[id]/editar` não
+  precisam da flag porque o segmento dinâmico já força renderização por
+  requisição.
 
 ## Modelo de dados (`prisma/schema.prisma`)
 
@@ -103,7 +113,10 @@ fiscal, CRM completo, autenticação/multiusuário.
       já pagos nunca são alterados ou removidos ao editar o contrato;
       recebimentos pendentes têm o `valorPrevisto` atualizado se o valor do
       contrato mudar
-- [ ] Passo 4 — dashboard financeiro
+- [x] Passo 4 — dashboard financeiro (`lib/dashboard.ts`, `app/page.tsx`):
+      recebido vs. previsto no mês, contratos ativos, inadimplência
+      (atrasados + pendentes vencidos) e próximos prazos da agenda; corrigido
+      bug em "Marcar como pago" que não preenchia `valorRealizado`
 - [ ] Passo 5 — filtros (cliente, status, período)
 - [ ] Passo 6 — calendário de atendimento
 - [ ] Passo 7 — ajustes visuais e navegação final

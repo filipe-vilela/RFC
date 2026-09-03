@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { CompromissoForm } from "../CompromissoForm";
 import { createCompromisso } from "../actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function NovoCompromissoPage() {
   const contratos = await prisma.contrato.findMany({
     orderBy: { numero: "asc" },

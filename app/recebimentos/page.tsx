@@ -6,6 +6,8 @@ import { ORIGEM_RECEBIMENTO, STATUS_RECEBIMENTO } from "@/lib/enums";
 import { buttonPrimaryClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
 import { formatData, formatMoeda } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function RecebimentosPage() {
   const recebimentos = await prisma.recebimento.findMany({
     orderBy: { dataPrevista: "desc" },

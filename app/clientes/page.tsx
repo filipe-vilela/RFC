@@ -5,6 +5,8 @@ import { DeleteButton } from "../components/DeleteButton";
 import { STATUS_CLIENTE } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
 
+export const dynamic = "force-dynamic";
+
 export default async function ClientesPage({
   searchParams,
 }: PageProps<"/clientes">) {

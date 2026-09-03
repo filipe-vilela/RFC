@@ -6,6 +6,8 @@ import { STATUS_COMPROMISSO, TIPO_COMPROMISSO } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
 import { formatData } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function AgendaPage() {
   const compromissos = await prisma.compromisso.findMany({
     orderBy: { data: "asc" },

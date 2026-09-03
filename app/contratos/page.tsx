@@ -6,6 +6,8 @@ import { PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
 import { buttonPrimaryClass, linkClass } from "@/lib/ui";
 import { formatData, formatMoeda } from "@/lib/format";
 
+export const dynamic = "force-dynamic";
+
 export default async function ContratosPage({
   searchParams,
 }: PageProps<"/contratos">) {

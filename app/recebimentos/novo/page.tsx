@@ -2,6 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { RecebimentoForm } from "../RecebimentoForm";
 import { createRecebimento } from "../actions";
 
+export const dynamic = "force-dynamic";
+
 export default async function NovoRecebimentoPage() {
   const contratos = await prisma.contrato.findMany({
     orderBy: { numero: "asc" },
