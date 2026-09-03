@@ -24,6 +24,7 @@ const NAV_LINKS = [
   { href: "/contratos", label: "Contratos" },
   { href: "/recebimentos", label: "Recebimentos" },
   { href: "/agenda", label: "Agenda" },
+  { href: "/calendario", label: "Calendário" },
 ];
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

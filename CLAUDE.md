@@ -120,7 +120,11 @@ fiscal, CRM completo, autenticação/multiusuário.
 - [x] Passo 5 — filtros por cliente, status e período nas listagens de
       Contratos, Recebimentos e Agenda (`FilterBar`, GET + `searchParams`);
       Clientes tem filtro por status
-- [ ] Passo 6 — calendário de atendimento
+- [x] Passo 6 — calendário de atendimento (`lib/calendario.ts`,
+      `app/calendario`): visão mês/semana, navegação anterior/próximo/hoje;
+      cruza `diaAtendimento` dos contratos ativos (parsing tolerante de
+      texto livre em `lib/dias-semana.ts`) com os compromissos da Agenda;
+      avisa quando um `diaAtendimento` não é reconhecido
 - [ ] Passo 7 — ajustes visuais e navegação final
 
 ## Comandos úteis
