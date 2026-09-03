@@ -32,7 +32,7 @@ function capitalizar(texto: string): string {
 function itemBadgeClass(status?: string): string {
   if (status === "CONCLUIDO") return "bg-emerald-50 text-emerald-700";
   if (status === "CANCELADO") return "bg-zinc-100 text-zinc-400 line-through";
-  return "bg-blue-50 text-blue-700";
+  return "bg-brand-navy-light/10 text-brand-navy";
 }
 
 export default async function CalendarioPage({
@@ -101,7 +101,7 @@ export default async function CalendarioPage({
             Próximo →
           </Link>
         </div>
-        <p className="font-medium text-zinc-700">{periodoLabel}</p>
+        <p className="font-medium text-brand-navy">{periodoLabel}</p>
       </div>
 
       {contratosSemDiaReconhecido.length > 0 && (
@@ -114,8 +114,8 @@ export default async function CalendarioPage({
         </p>
       )}
 
-      <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
-        <div className="grid min-w-[700px] grid-cols-7 border-b border-zinc-200 bg-zinc-50 text-xs font-medium text-zinc-500">
+      <div className="overflow-x-auto rounded-md border border-brand-border bg-white">
+        <div className="grid min-w-[700px] grid-cols-7 border-b border-brand-border bg-brand-grey-light text-xs font-medium text-brand-grey">
           {DIAS_SEMANA_LABELS.map((d) => (
             <div key={d.index} className="px-2 py-2 text-center">
               {d.label}
@@ -124,7 +124,7 @@ export default async function CalendarioPage({
         </div>
         <div className="grid min-w-[700px] grid-cols-1">
           {semanas.map((semana, i) => (
-            <div key={i} className="grid grid-cols-7 divide-x divide-zinc-100 border-b border-zinc-100 last:border-b-0">
+            <div key={i} className="grid grid-cols-7 divide-x divide-brand-border border-b border-brand-border last:border-b-0">
               {semana.map((dia) => {
                 const foraDoMes =
                   visao === "mes" && dia.data.getUTCMonth() !== dataRef.getUTCMonth();
@@ -135,13 +135,13 @@ export default async function CalendarioPage({
                     key={dia.data.toISOString()}
                     className={
                       "min-h-[110px] p-2 align-top text-xs " +
-                      (foraDoMes ? "bg-zinc-50 text-zinc-400" : "text-zinc-700")
+                      (foraDoMes ? "bg-brand-grey-light text-zinc-400" : "text-brand-text")
                     }
                   >
                     <p
                       className={
                         "mb-1 inline-flex h-5 w-5 items-center justify-center rounded-full text-xs font-medium " +
-                        (ehHoje ? "bg-zinc-900 text-white" : "text-zinc-500")
+                        (ehHoje ? "bg-brand-orange text-white" : "text-brand-grey")
                       }
                     >
                       {dia.data.getUTCDate()}
@@ -151,7 +151,7 @@ export default async function CalendarioPage({
                         item.tipo === "atendimento" ? (
                           <div
                             key={`a-${idx}`}
-                            className="truncate rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-700"
+                            className="truncate rounded bg-brand-orange-light px-1.5 py-0.5 text-brand-navy"
                             title={`Atendimento — ${item.clienteNome} (${item.contratoNumero})`}
                           >
                             {item.clienteNome}
@@ -177,13 +177,13 @@ export default async function CalendarioPage({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-4 text-xs text-zinc-500">
+      <div className="flex flex-wrap gap-4 text-xs text-brand-grey">
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-zinc-400" /> Atendimento recorrente
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-orange" /> Atendimento recorrente
           (contrato ativo)
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-400" /> Compromisso pendente
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-brand-navy-light" /> Compromisso pendente
         </span>
         <span className="inline-flex items-center gap-1.5">
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" /> Concluído

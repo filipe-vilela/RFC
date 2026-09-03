@@ -62,11 +62,11 @@ export default async function RecebimentosPage({
       />
 
       {recebimentos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum recebimento encontrado para os filtros selecionados.</p>
+        <p className="text-brand-grey">Nenhum recebimento encontrado para os filtros selecionados.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-brand-border bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-zinc-600">
+            <thead className="bg-brand-navy-light text-left text-white">
               <tr>
                 <th className="px-4 py-2 font-medium">Contrato</th>
                 <th className="px-4 py-2 font-medium">Cliente</th>
@@ -79,23 +79,23 @@ export default async function RecebimentosPage({
             </thead>
             <tbody>
               {recebimentos.map((recebimento) => (
-                <tr key={recebimento.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-3 font-medium text-zinc-900">
+                <tr key={recebimento.id} className="border-t border-brand-border">
+                  <td className="px-4 py-3 font-medium text-brand-text">
                     {recebimento.contrato.numero}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {recebimento.contrato.cliente.nome}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {formatMoeda(recebimento.valorPrevisto)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {formatData(recebimento.dataPrevista)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {STATUS_RECEBIMENTO[recebimento.status]}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {ORIGEM_RECEBIMENTO[recebimento.origem]}
                   </td>
                   <td className="px-4 py-3">

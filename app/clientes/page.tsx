@@ -46,11 +46,11 @@ export default async function ClientesPage({
       />
 
       {clientes.length === 0 ? (
-        <p className="text-zinc-600">Nenhum cliente encontrado para os filtros selecionados.</p>
+        <p className="text-brand-grey">Nenhum cliente encontrado para os filtros selecionados.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-brand-border bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-zinc-600">
+            <thead className="bg-brand-navy-light text-left text-white">
               <tr>
                 <th className="px-4 py-2 font-medium">Nome</th>
                 <th className="px-4 py-2 font-medium">Setor</th>
@@ -61,17 +61,17 @@ export default async function ClientesPage({
             </thead>
             <tbody>
               {clientes.map((cliente) => (
-                <tr key={cliente.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-3 font-medium text-zinc-900">
+                <tr key={cliente.id} className="border-t border-brand-border">
+                  <td className="px-4 py-3 font-medium text-brand-text">
                     {cliente.nome}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {cliente.setor ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {cliente.contatoNome ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {STATUS_CLIENTE[cliente.status]}
                   </td>
                   <td className="px-4 py-3">

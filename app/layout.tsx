@@ -1,16 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Geist, Geist_Mono } from "next/font/google";
+import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const dmSans = DM_Sans({
+  variable: "--font-dm-sans",
   subsets: ["latin"],
+  weight: ["400", "500", "700"],
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const dmSerifDisplay = DM_Serif_Display({
+  variable: "--font-dm-serif",
   subsets: ["latin"],
+  weight: ["400"],
 });
 
 export const metadata: Metadata = {
@@ -31,18 +33,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${dmSans.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-zinc-50 text-zinc-900">
-        <header className="border-b border-zinc-200 bg-white">
+      <body className="min-h-full flex flex-col bg-brand-grey-light text-brand-text">
+        <header className="bg-brand-navy">
           <div className="mx-auto flex max-w-5xl items-center gap-6 px-6 py-4">
-            <span className="font-semibold">Gestão RFC</span>
+            <span className="font-serif text-lg text-white">Gestão RFC</span>
             <nav className="flex gap-4">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-sm text-zinc-600 hover:text-zinc-900"
+                  className="text-sm font-medium text-[#D6DAEE] hover:text-white"
                 >
                   {link.label}
                 </Link>

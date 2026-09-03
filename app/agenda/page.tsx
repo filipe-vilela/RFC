@@ -62,11 +62,11 @@ export default async function AgendaPage({
       />
 
       {compromissos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum compromisso encontrado para os filtros selecionados.</p>
+        <p className="text-brand-grey">Nenhum compromisso encontrado para os filtros selecionados.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-brand-border bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-zinc-600">
+            <thead className="bg-brand-navy-light text-left text-white">
               <tr>
                 <th className="px-4 py-2 font-medium">Data</th>
                 <th className="px-4 py-2 font-medium">Título</th>
@@ -78,22 +78,22 @@ export default async function AgendaPage({
             </thead>
             <tbody>
               {compromissos.map((compromisso) => (
-                <tr key={compromisso.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-3 text-zinc-600">
+                <tr key={compromisso.id} className="border-t border-brand-border">
+                  <td className="px-4 py-3 text-brand-grey">
                     {formatData(compromisso.data)}
                   </td>
-                  <td className="px-4 py-3 font-medium text-zinc-900">
+                  <td className="px-4 py-3 font-medium text-brand-text">
                     {compromisso.titulo}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {TIPO_COMPROMISSO[compromisso.tipo]}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {compromisso.contrato
                       ? `${compromisso.contrato.numero} — ${compromisso.contrato.cliente.nome}`
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {STATUS_COMPROMISSO[compromisso.status]}
                   </td>
                   <td className="px-4 py-3">

@@ -18,7 +18,7 @@ export function FilterBar({
     <form
       method="GET"
       action={action}
-      className="flex flex-wrap items-end gap-3 rounded-md border border-zinc-200 bg-white p-4"
+      className="flex flex-wrap items-end gap-3 rounded-md border border-brand-border bg-white p-4"
     >
       {cliente && (
         <div className="w-56">

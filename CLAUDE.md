@@ -12,6 +12,30 @@ atendimento, com uma visão financeira consolidada.
 - **Tailwind CSS 4**
 - Sem autenticação por enquanto (uso interno)
 
+## Identidade visual
+
+Paleta e tipografia extraídas de um relatório de referência do usuário
+(estudos mercadológicos da Real Forte Consultoria), definidas como tokens
+Tailwind em `app/globals.css` (`@theme inline`):
+
+- `brand-navy` `#0D1B4B` / `brand-navy-light` `#1B2E6B` — cor primária
+  (header, títulos, cabeçalho de tabelas)
+- `brand-orange` `#E8720C` (hover `brand-orange-dark` `#CC640A`) /
+  `brand-orange-light` `#FCEFE2` — cor de destaque (botões primários,
+  links, badges de atendimento)
+- `brand-grey` `#5B6270` / `brand-grey-light` `#F4F5F7` — texto secundário
+  e fundo da página
+- `brand-border` `#E4E6EC` / `brand-text` `#22263A`
+- Fontes via `next/font/google`: **DM Serif Display** para
+  títulos (`h1`-`h4`, regra global em `globals.css`) e **DM Sans** para o
+  corpo do texto
+- Cores semânticas (vermelho para erro/inadimplência, verde para
+  concluído) foram mantidas fora da paleta da marca de propósito, para não
+  se confundirem com o laranja de destaque
+- Botões, inputs e links ficam centralizados em `lib/ui.ts` — mudar a
+  marca no futuro é editar esse arquivo + `app/globals.css`, não cada
+  página
+
 ## Decisões e pontos de atenção específicos desta stack
 
 - **Prisma 7 exige driver adapter explícito** (não há mais engine binário

@@ -69,11 +69,11 @@ export default async function ContratosPage({
       />
 
       {contratos.length === 0 ? (
-        <p className="text-zinc-600">Nenhum contrato encontrado para os filtros selecionados.</p>
+        <p className="text-brand-grey">Nenhum contrato encontrado para os filtros selecionados.</p>
       ) : (
-        <div className="overflow-x-auto rounded-md border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-md border border-brand-border bg-white">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-zinc-600">
+            <thead className="bg-brand-navy-light text-left text-white">
               <tr>
                 <th className="px-4 py-2 font-medium">Número</th>
                 <th className="px-4 py-2 font-medium">Cliente</th>
@@ -86,23 +86,23 @@ export default async function ContratosPage({
             </thead>
             <tbody>
               {contratos.map((contrato) => (
-                <tr key={contrato.id} className="border-t border-zinc-100">
-                  <td className="px-4 py-3 font-medium text-zinc-900">
+                <tr key={contrato.id} className="border-t border-brand-border">
+                  <td className="px-4 py-3 font-medium text-brand-text">
                     {contrato.numero}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {contrato.cliente.nome}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {formatMoeda(contrato.valor)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {PERIODICIDADE[contrato.periodicidade]}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {formatData(contrato.dataInicio)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-3 text-brand-grey">
                     {STATUS_CONTRATO[contrato.status]}
                   </td>
                   <td className="px-4 py-3">
