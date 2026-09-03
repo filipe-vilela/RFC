@@ -10,6 +10,7 @@ import { paramString } from "@/lib/query-params";
 import type { Prisma, StatusRecebimento } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Recebimentos" };
 
 export default async function RecebimentosPage({
   searchParams,

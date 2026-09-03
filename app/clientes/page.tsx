@@ -9,6 +9,7 @@ import { paramString } from "@/lib/query-params";
 import type { StatusCliente } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Clientes" };
 
 export default async function ClientesPage({
   searchParams,

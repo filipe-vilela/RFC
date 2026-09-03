@@ -12,6 +12,7 @@ import { paramString } from "@/lib/query-params";
 import { linkClass } from "@/lib/ui";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Calendário" };
 
 function inicioDoDiaUTC(data: Date): Date {
   return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));

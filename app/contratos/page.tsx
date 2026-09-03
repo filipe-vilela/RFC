@@ -10,6 +10,7 @@ import { paramString } from "@/lib/query-params";
 import type { Prisma, StatusContrato } from "@/app/generated/prisma/client";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Contratos" };
 
 export default async function ContratosPage({
   searchParams,

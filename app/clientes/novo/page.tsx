@@ -1,6 +1,8 @@
 import { ClienteForm } from "../ClienteForm";
 import { createCliente } from "../actions";
 
+export const metadata = { title: "Novo cliente" };
+
 export default function NovoClientePage() {
   return (
     <div className="space-y-6">

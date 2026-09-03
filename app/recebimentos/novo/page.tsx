@@ -3,6 +3,7 @@ import { RecebimentoForm } from "../RecebimentoForm";
 import { createRecebimento } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Novo recebimento" };
 
 export default async function NovoRecebimentoPage() {
   const contratos = await prisma.contrato.findMany({

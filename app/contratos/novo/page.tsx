@@ -3,6 +3,7 @@ import { ContratoForm } from "../ContratoForm";
 import { createContrato } from "../actions";
 
 export const dynamic = "force-dynamic";
+export const metadata = { title: "Novo contrato" };
 
 export default async function NovoContratoPage() {
   const clientes = await prisma.cliente.findMany({

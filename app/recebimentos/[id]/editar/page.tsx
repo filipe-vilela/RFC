@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { RecebimentoForm } from "../../RecebimentoForm";
 import { updateRecebimento } from "../../actions";
 
+export const metadata = { title: "Editar recebimento" };
+
 export default async function EditarRecebimentoPage({
   params,
 }: PageProps<"/recebimentos/[id]/editar">) {

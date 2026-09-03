@@ -149,7 +149,13 @@ fiscal, CRM completo, autenticação/multiusuário.
       cruza `diaAtendimento` dos contratos ativos (parsing tolerante de
       texto livre em `lib/dias-semana.ts`) com os compromissos da Agenda;
       avisa quando um `diaAtendimento` não é reconhecido
-- [ ] Passo 7 — ajustes visuais e navegação final
+- [x] Passo 7 — ajustes visuais e navegação final: identidade visual da
+      Real Forte Consultoria aplicada em todo o app (paleta navy/laranja +
+      DM Sans/DM Serif Display, ver seção "Identidade visual"); link ativo
+      destacado na navegação (`app/components/NavLinks.tsx`, client
+      component com `usePathname`); título de aba por página
+      (`metadata.title` + template em `app/layout.tsx`); página 404
+      personalizada (`app/not-found.tsx`)
 
 ## Comandos úteis
 
