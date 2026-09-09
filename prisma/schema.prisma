@@ -78,6 +78,7 @@ model Cliente {
   contatoEmail   String?
   contatoTelefone String?
   setor          String?
+  diaVencimento  Int?
   status         StatusCliente @default(ATIVO)
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt

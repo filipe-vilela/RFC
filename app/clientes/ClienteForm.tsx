@@ -9,6 +9,7 @@ type ClienteDefaultValues = {
   contatoEmail: string | null;
   contatoTelefone: string | null;
   setor: string | null;
+  diaVencimento: number | null;
   status: string;
 };
 
@@ -113,6 +114,26 @@ export function ClienteForm({
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor="diaVencimento">
+          Dia de vencimento da NF
+        </label>
+        <input
+          id="diaVencimento"
+          name="diaVencimento"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="ex.: 10"
+          defaultValue={defaultValues?.diaVencimento ?? ""}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-brand-grey">
+          Dia do mês usado para preencher automaticamente a data de emissão
+          de NF dos recebimentos deste cliente.
+        </p>
       </div>
 
       <div className="flex gap-3 pt-2">

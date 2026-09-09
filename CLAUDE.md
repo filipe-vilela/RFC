@@ -66,7 +66,9 @@ Tailwind em `app/globals.css` (`@theme inline`):
 
 ## Modelo de dados (`prisma/schema.prisma`)
 
-- **Cliente** — nome, CNPJ, contato, setor, status (ativo/inativo)
+- **Cliente** — nome, CNPJ, contato, setor, `diaVencimento` (dia do mês
+  usado para calcular a data de emissão de NF, ver "Dia de vencimento por
+  cliente"), status (ativo/inativo)
 - **Contrato** — vinculado a um Cliente; número, escopo, valor,
   periodicidade (mensal/trimestral/anual/único/por fase/indeterminado),
   data início/fim, status (ativo/encerrado/suspenso), `diaAtendimento`
@@ -76,8 +78,9 @@ Tailwind em `app/globals.css` (`@theme inline`):
 - **Desconto** — vinculado a um Contrato; `percentual`, `mesInicio`,
   `mesFim` (mês corrido desde o início do contrato)
 - **Recebimento** — vinculado a um Contrato; valor previsto/realizado, data
-  prevista/realizada, `dataEmissaoNF` (preenchida manualmente), status
-  (pendente/pago — "atrasado" é derivado, ver "Status derivado"), origem
+  prevista/realizada, `dataEmissaoNF` (preenchida automaticamente a partir
+  do Cliente, editável), status (pendente/pago — "atrasado" é derivado,
+  ver "Status derivado"), origem
   (gerado automaticamente vs. lançado manualmente)
 - **Compromisso** — vinculado opcionalmente a um Contrato; título,
   descrição, data, tipo (entrega/reunião/prazo interno/atendimento
@@ -186,6 +189,28 @@ existente é caso raro e não precisa desse atalho.
   a semana de `dataInicio`; mensal repete só na mesma "ocorrência do mês"
   (1ª, 2ª, 3ª... semana) em que `dataInicio` cai.
 
+### Dia de vencimento por cliente (`Cliente.diaVencimento`)
+
+- Cadastrado uma vez no Cliente (não no Contrato nem no Recebimento) —
+  o usuário pediu para não ter que digitar a data de emissão de NF
+  parcela por parcela. `montarProgramacaoRecebimentos` recebe
+  `diaVencimentoCliente` e calcula `dataEmissaoNF` de cada parcela usando
+  o mês da própria `dataPrevista` com esse dia (ajustado para o último
+  dia do mês quando ele não existir, ex. dia 31 em fevereiro).
+- Todo ponto que chama `sincronizarRecebimentosAutomaticos`
+  (`createContrato`, `updateContrato`, `renovarContrato`,
+  `updateCliente`) busca o `diaVencimento` do Cliente e passa adiante.
+  `updateCliente` propositalmente re-sincroniza todos os contratos do
+  cliente para preencher retroativamente as parcelas pendentes que ainda
+  não tinham NF — mas só quando `dataEmissaoNF` está `NULL`; nunca
+  sobrescreve um valor que o usuário já tenha ajustado manualmente no
+  Recebimento.
+- O cadastro rápido de cliente novo dentro do formulário de Contrato
+  (`ClienteCampo.tsx`) não tem esse campo — é só um atalho com os dados
+  essenciais. Se o dia de vencimento for definido depois, editando o
+  Cliente, as parcelas pendentes são preenchidas automaticamente nesse
+  momento.
+
 ### Ações em lote e impressão de notas fiscais (Recebimentos)
 
 - A listagem de Recebimentos é uma única `<form>` (sem forms aninhados);
@@ -194,8 +219,10 @@ existente é caso raro e não precisa desse atalho.
   do mesmo form (inclusive as ações por linha, como "Marcar como pago" e
   "Excluir"). `SelecionarTodos.tsx` e `ConfirmButton.tsx` são os únicos
   client components envolvidos.
-- `Recebimento.dataEmissaoNF` é preenchido manualmente (não há regra
-  automática). `/recebimentos/notas-fiscais` lista, por mês, os
+- `Recebimento.dataEmissaoNF` é preenchida automaticamente a partir de
+  `Cliente.diaVencimento` (dia do mês cadastrado no Cliente — ver
+  "Dia de vencimento por cliente"), mas continua editável por parcela
+  para exceções. `/recebimentos/notas-fiscais` lista, por mês, os
   recebimentos previstos ordenados por essa data, com um botão de
   impressão (`window.print()` + variante `print:` do Tailwind escondendo
   nav/filtros/botões).

@@ -15,6 +15,7 @@ async function main() {
       contatoNome: "Marina Souza",
       contatoEmail: "marina@alfacomercio.com.br",
       setor: "Varejo alimentício",
+      diaVencimento: 5,
       status: "ATIVO",
     },
   });
@@ -26,6 +27,7 @@ async function main() {
       contatoNome: "Roberto Lima",
       contatoEmail: "roberto@betaindustria.com.br",
       setor: "Indústria metalúrgica",
+      diaVencimento: 10,
       status: "ATIVO",
     },
   });
@@ -90,18 +92,23 @@ async function main() {
     include: { descontos: true },
   });
 
-  // Gera as parcelas reais (com desconto aplicado) pela mesma função usada
-  // pelo app, em vez de valores fixos — assim o seed reflete o comportamento
-  // de verdade do sistema.
+  // Gera as parcelas reais (com desconto e data de emissão de NF aplicados)
+  // pela mesma função usada pelo app, em vez de valores fixos — assim o
+  // seed reflete o comportamento de verdade do sistema.
   await prisma.$transaction(async (tx) => {
-    await sincronizarRecebimentosAutomaticos(tx, contratoA.id, contratoA);
-    await sincronizarRecebimentosAutomaticos(tx, contratoB.id, contratoB);
+    await sincronizarRecebimentosAutomaticos(tx, contratoA.id, {
+      ...contratoA,
+      diaVencimentoCliente: clienteA.diaVencimento,
+    });
+    await sincronizarRecebimentosAutomaticos(tx, contratoB.id, {
+      ...contratoB,
+      diaVencimentoCliente: clienteB.diaVencimento,
+    });
     await sincronizarRecebimentosAutomaticos(tx, contratoC.id, contratoC);
   });
 
   // Marca como pagas a parcela única da Gama (contrato encerrado) e a
-  // parcela de agosto da Alfa, e adiciona a data de emissão de NF na
-  // próxima parcela pendente da Alfa.
+  // parcela de agosto da Alfa.
   const recebimentoC = await prisma.recebimento.findFirstOrThrow({
     where: { contratoId: contratoC.id },
   });
@@ -116,14 +123,6 @@ async function main() {
   await prisma.recebimento.update({
     where: { id: recebimentoAgostoA.id },
     data: { status: "PAGO", valorRealizado: recebimentoAgostoA.valorPrevisto, dataRealizada: new Date("2026-08-04") },
-  });
-
-  const recebimentoSetembroA = await prisma.recebimento.findFirstOrThrow({
-    where: { contratoId: contratoA.id, dataPrevista: new Date("2026-09-01") },
-  });
-  await prisma.recebimento.update({
-    where: { id: recebimentoSetembroA.id },
-    data: { dataEmissaoNF: new Date("2026-09-01") },
   });
 
   await prisma.compromisso.create({

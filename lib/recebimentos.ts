@@ -9,9 +9,18 @@ function addMeses(data: Date, meses: number): Date {
   );
 }
 
+/** Dia informado, ajustado para o último dia do mês se ele não existir (ex.: 31 em fevereiro). */
+function calcularDataEmissaoNF(dataPrevista: Date, diaVencimento: number | null | undefined): Date | null {
+  if (!diaVencimento) return null;
+  const ano = dataPrevista.getUTCFullYear();
+  const mes = dataPrevista.getUTCMonth();
+  const ultimoDiaDoMes = new Date(Date.UTC(ano, mes + 1, 0)).getUTCDate();
+  return new Date(Date.UTC(ano, mes, Math.min(diaVencimento, ultimoDiaDoMes)));
+}
+
 type DescontoContrato = { percentual: number; mesInicio: number; mesFim: number };
 
-type ItemAgenda = { dataPrevista: Date; valorPrevisto: number };
+type ItemAgenda = { dataPrevista: Date; valorPrevisto: number; dataEmissaoNF: Date | null };
 
 function aplicarDesconto(
   valor: number,
@@ -34,6 +43,10 @@ function aplicarDesconto(
  * meses corridos desde `dataInicio`, mesmo para periodicidade trimestral ou
  * anual — assim "20% nos 3 primeiros meses" cobre certinho a 1ª parcela
  * trimestral, e "10% do 4º ao 6º mês" cobre a 2ª.
+ *
+ * `diaVencimentoCliente` (cadastrado no Cliente) preenche a data de emissão
+ * de NF de cada parcela automaticamente, usando o mês da própria parcela —
+ * assim o usuário não precisa digitar isso parcela por parcela.
  */
 export function montarProgramacaoRecebimentos(contrato: {
   valor: number;
@@ -42,12 +55,19 @@ export function montarProgramacaoRecebimentos(contrato: {
   dataFim: Date | null;
   renovadoAte?: Date | null;
   descontos?: DescontoContrato[];
+  diaVencimentoCliente?: number | null;
 }): ItemAgenda[] {
-  const { valor, periodicidade, dataInicio, dataFim } = contrato;
+  const { valor, periodicidade, dataInicio, dataFim, diaVencimentoCliente } = contrato;
   const descontos = contrato.descontos ?? [];
 
   if (periodicidade === "UNICO") {
-    return [{ dataPrevista: dataInicio, valorPrevisto: aplicarDesconto(valor, 1, descontos) }];
+    return [
+      {
+        dataPrevista: dataInicio,
+        valorPrevisto: aplicarDesconto(valor, 1, descontos),
+        dataEmissaoNF: calcularDataEmissaoNF(dataInicio, diaVencimentoCliente),
+      },
+    ];
   }
 
   if (periodicidade === "POR_FASE") {
@@ -65,6 +85,7 @@ export function montarProgramacaoRecebimentos(contrato: {
     programacao.push({
       dataPrevista: dataAtual,
       valorPrevisto: aplicarDesconto(valor, mesDaParcela, descontos),
+      dataEmissaoNF: calcularDataEmissaoNF(dataAtual, diaVencimentoCliente),
     });
     dataAtual = addMeses(dataAtual, intervaloMeses);
     mesDaParcela += intervaloMeses;
@@ -88,6 +109,7 @@ export async function sincronizarRecebimentosAutomaticos(
     dataFim: Date | null;
     renovadoAte?: Date | null;
     descontos?: DescontoContrato[];
+    diaVencimentoCliente?: number | null;
   },
 ) {
   const programacao = montarProgramacaoRecebimentos(contrato);
@@ -105,17 +127,26 @@ export async function sincronizarRecebimentosAutomaticos(
     const existente = existentesPorData.get(item.dataPrevista.toISOString());
     if (existente) {
       idsParaManter.add(existente.id);
-      if (existente.status !== "PAGO" && existente.valorPrevisto !== item.valorPrevisto) {
-        await tx.recebimento.update({
-          where: { id: existente.id },
-          data: { valorPrevisto: item.valorPrevisto },
-        });
+      if (existente.status !== "PAGO") {
+        const atualizacao: Prisma.RecebimentoUpdateInput = {};
+        if (existente.valorPrevisto !== item.valorPrevisto) {
+          atualizacao.valorPrevisto = item.valorPrevisto;
+        }
+        // Só preenche a NF automaticamente se ainda não houver uma data
+        // definida — nunca sobrescreve um ajuste manual do usuário.
+        if (existente.dataEmissaoNF === null && item.dataEmissaoNF !== null) {
+          atualizacao.dataEmissaoNF = item.dataEmissaoNF;
+        }
+        if (Object.keys(atualizacao).length > 0) {
+          await tx.recebimento.update({ where: { id: existente.id }, data: atualizacao });
+        }
       }
     } else {
       novos.push({
         contratoId,
         dataPrevista: item.dataPrevista,
         valorPrevisto: item.valorPrevisto,
+        dataEmissaoNF: item.dataEmissaoNF,
         status: "PENDENTE",
         origem: "GERADO_AUTOMATICAMENTE",
       });

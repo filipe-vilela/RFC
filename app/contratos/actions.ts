@@ -60,15 +60,21 @@ export async function createContrato(formData: FormData) {
   const descontos = readDescontosFormData(formData);
 
   await prisma.$transaction(async (tx) => {
-    const clienteId =
+    const cliente =
       clienteModo === "novo"
-        ? (await tx.cliente.create({ data: readNovoClienteFormData(formData) })).id
-        : String(formData.get("clienteId") ?? "");
+        ? await tx.cliente.create({ data: readNovoClienteFormData(formData) })
+        : await tx.cliente.findUniqueOrThrow({
+            where: { id: String(formData.get("clienteId") ?? "") },
+          });
 
     const contrato = await tx.contrato.create({
-      data: { ...data, clienteId, descontos: { create: descontos } },
+      data: { ...data, clienteId: cliente.id, descontos: { create: descontos } },
     });
-    await sincronizarRecebimentosAutomaticos(tx, contrato.id, { ...contrato, descontos });
+    await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
+      ...contrato,
+      descontos,
+      diaVencimentoCliente: cliente.diaVencimento,
+    });
   });
 
   revalidatePath("/contratos");
@@ -83,12 +89,17 @@ export async function updateContrato(id: string, formData: FormData) {
   const descontos = readDescontosFormData(formData);
 
   await prisma.$transaction(async (tx) => {
+    const cliente = await tx.cliente.findUniqueOrThrow({ where: { id: clienteId } });
     await tx.desconto.deleteMany({ where: { contratoId: id } });
     const contrato = await tx.contrato.update({
       where: { id },
       data: { ...data, clienteId, descontos: { create: descontos } },
     });
-    await sincronizarRecebimentosAutomaticos(tx, contrato.id, { ...contrato, descontos });
+    await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
+      ...contrato,
+      descontos,
+      diaVencimentoCliente: cliente.diaVencimento,
+    });
   });
   revalidatePath("/contratos");
   revalidatePath("/recebimentos");
@@ -122,7 +133,7 @@ export async function renovarContrato(id: string) {
   await prisma.$transaction(async (tx) => {
     const contrato = await tx.contrato.findUniqueOrThrow({
       where: { id },
-      include: { descontos: true },
+      include: { descontos: true, cliente: true },
     });
 
     const hoje = new Date();
@@ -143,6 +154,7 @@ export async function renovarContrato(id: string) {
     await sincronizarRecebimentosAutomaticos(tx, id, {
       ...contratoAtualizado,
       descontos: contrato.descontos,
+      diaVencimentoCliente: contrato.cliente.diaVencimento,
     });
   });
 
