@@ -14,7 +14,7 @@ export default async function NovoContratoPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Novo contrato</h1>
-      <ContratoForm action={createContrato} clientes={clientes} />
+      <ContratoForm action={createContrato} clientes={clientes} permitirNovoCliente />
     </div>
   );
 }

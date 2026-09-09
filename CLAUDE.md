@@ -98,6 +98,17 @@ Incluído:
 Fora do escopo (não implementar sem pedido explícito): emissão de nota
 fiscal, CRM completo, autenticação/multiusuário.
 
+### Cadastro combinado de cliente novo no formulário de contrato
+
+Em `/contratos/novo`, um alternador ("Cliente existente" / "Cadastrar novo
+cliente") troca o `<select>` de cliente por campos de cadastro inline
+(`app/contratos/ClienteCampo.tsx`, client component só para esse toggle —
+o restante do formulário continua Server Action). Ao salvar, `createContrato`
+cria o Cliente e o Contrato na mesma transação. Só existe na criação — o
+formulário de edição (`permitirNovoCliente` não passado) continua com o
+`<select>` simples, já que trocar de cliente ao editar um contrato
+existente é caso raro e não precisa desse atalho.
+
 ### Geração automática de recebimentos (`lib/recebimentos.ts`)
 
 - Roda dentro de uma transação, logo após criar/atualizar um contrato

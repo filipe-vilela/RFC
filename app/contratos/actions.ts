@@ -11,7 +11,6 @@ function readContratoFormData(formData: FormData) {
   const dataFimRaw = String(formData.get("dataFim") ?? "").trim();
 
   return {
-    clienteId: String(formData.get("clienteId") ?? ""),
     numero: String(formData.get("numero") ?? "").trim(),
     escopo: String(formData.get("escopo") ?? "").trim() || null,
     valor: Number(formData.get("valor")),
@@ -23,21 +22,42 @@ function readContratoFormData(formData: FormData) {
   };
 }
 
+function readNovoClienteFormData(formData: FormData) {
+  return {
+    nome: String(formData.get("clienteNovoNome") ?? "").trim(),
+    cnpj: String(formData.get("clienteNovoCnpj") ?? "").trim() || null,
+    contatoNome: String(formData.get("clienteNovoContatoNome") ?? "").trim() || null,
+    contatoEmail: String(formData.get("clienteNovoContatoEmail") ?? "").trim() || null,
+    contatoTelefone: String(formData.get("clienteNovoContatoTelefone") ?? "").trim() || null,
+    setor: String(formData.get("clienteNovoSetor") ?? "").trim() || null,
+  };
+}
+
 export async function createContrato(formData: FormData) {
   const data = readContratoFormData(formData);
+  const clienteModo = String(formData.get("clienteModo") ?? "existente");
+
   await prisma.$transaction(async (tx) => {
-    const contrato = await tx.contrato.create({ data });
+    const clienteId =
+      clienteModo === "novo"
+        ? (await tx.cliente.create({ data: readNovoClienteFormData(formData) })).id
+        : String(formData.get("clienteId") ?? "");
+
+    const contrato = await tx.contrato.create({ data: { ...data, clienteId } });
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, contrato);
   });
+
   revalidatePath("/contratos");
   revalidatePath("/recebimentos");
+  revalidatePath("/clientes");
   redirect("/contratos");
 }
 
 export async function updateContrato(id: string, formData: FormData) {
   const data = readContratoFormData(formData);
+  const clienteId = String(formData.get("clienteId") ?? "");
   await prisma.$transaction(async (tx) => {
-    const contrato = await tx.contrato.update({ where: { id }, data });
+    const contrato = await tx.contrato.update({ where: { id }, data: { ...data, clienteId } });
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, contrato);
   });
   revalidatePath("/contratos");

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { inputClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from "@/lib/ui";
 import { PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
 import { formatDataInput } from "@/lib/format";
+import { ClienteCampo } from "./ClienteCampo";
 
 type ContratoDefaultValues = {
   clienteId: string;
@@ -19,34 +20,40 @@ export function ContratoForm({
   action,
   defaultValues,
   clientes,
+  permitirNovoCliente = false,
 }: {
   action: (formData: FormData) => void;
   defaultValues?: ContratoDefaultValues;
   clientes: { id: string; nome: string }[];
+  permitirNovoCliente?: boolean;
 }) {
   return (
     <form action={action} className="max-w-lg space-y-4">
-      <div>
-        <label className={labelClass} htmlFor="clienteId">
-          Cliente *
-        </label>
-        <select
-          id="clienteId"
-          name="clienteId"
-          required
-          defaultValue={defaultValues?.clienteId ?? ""}
-          className={inputClass}
-        >
-          <option value="" disabled>
-            Selecione um cliente
-          </option>
-          {clientes.map((cliente) => (
-            <option key={cliente.id} value={cliente.id}>
-              {cliente.nome}
+      {permitirNovoCliente ? (
+        <ClienteCampo clientes={clientes} clienteIdSelecionado={defaultValues?.clienteId} />
+      ) : (
+        <div>
+          <label className={labelClass} htmlFor="clienteId">
+            Cliente *
+          </label>
+          <select
+            id="clienteId"
+            name="clienteId"
+            required
+            defaultValue={defaultValues?.clienteId ?? ""}
+            className={inputClass}
+          >
+            <option value="" disabled>
+              Selecione um cliente
             </option>
-          ))}
-        </select>
-      </div>
+            {clientes.map((cliente) => (
+              <option key={cliente.id} value={cliente.id}>
+                {cliente.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-4">
         <div>
