@@ -37,7 +37,7 @@ export default async function NotasFiscaisPage({
   const mesAnterior = addMeses(mesRef, -1);
 
   const recebimentos = await prisma.recebimento.findMany({
-    where: { dataPrevista: { gte: mesRef, lt: proximoMes } },
+    where: { dataPrevista: { gte: mesRef, lt: proximoMes }, emitirNF: true },
     include: { contrato: { include: { cliente: true } } },
     orderBy: { dataPrevista: "asc" },
   });
@@ -49,7 +49,8 @@ export default async function NotasFiscaisPage({
     return a.dataPrevista.getTime() - b.dataPrevista.getTime();
   });
 
-  const totalPrevisto = ordenados.reduce((soma, r) => soma + r.valorPrevisto, 0);
+  const valorNota = (r: (typeof ordenados)[number]) => r.valorNF ?? r.valorPrevisto;
+  const totalPrevisto = ordenados.reduce((soma, r) => soma + valorNota(r), 0);
   const mesLabel = capitalizar(
     mesRef.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }),
   );
@@ -91,25 +92,31 @@ export default async function NotasFiscaisPage({
               <tr>
                 <th className="px-4 py-2 font-medium">Cliente</th>
                 <th className="px-4 py-2 font-medium">Contrato</th>
-                <th className="px-4 py-2 font-medium">Valor</th>
+                <th className="px-4 py-2 font-medium">Valor da NF</th>
                 <th className="px-4 py-2 font-medium">Data prevista</th>
                 <th className="px-4 py-2 font-medium">Data de emissão da NF</th>
               </tr>
             </thead>
             <tbody>
-              {ordenados.map((recebimento) => (
-                <tr key={recebimento.id} className="border-t border-brand-border">
-                  <td className="px-4 py-3 font-medium text-brand-text">
-                    {recebimento.contrato.cliente.nome}
-                  </td>
-                  <td className="px-4 py-3 text-brand-grey">{recebimento.contrato.numero}</td>
-                  <td className="px-4 py-3 text-brand-grey">{formatMoeda(recebimento.valorPrevisto)}</td>
-                  <td className="px-4 py-3 text-brand-grey">{formatData(recebimento.dataPrevista)}</td>
-                  <td className="px-4 py-3 text-brand-grey">
-                    {recebimento.dataEmissaoNF ? formatData(recebimento.dataEmissaoNF) : "—"}
-                  </td>
-                </tr>
-              ))}
+              {ordenados.map((recebimento) => {
+                const parcial = recebimento.valorNF != null && recebimento.valorNF !== recebimento.valorPrevisto;
+                return (
+                  <tr key={recebimento.id} className="border-t border-brand-border">
+                    <td className="px-4 py-3 font-medium text-brand-text">
+                      {recebimento.contrato.cliente.nome}
+                    </td>
+                    <td className="px-4 py-3 text-brand-grey">{recebimento.contrato.numero}</td>
+                    <td className="px-4 py-3 text-brand-grey">
+                      {formatMoeda(valorNota(recebimento))}
+                      {parcial && <span className="ml-1 text-xs text-brand-orange">(parcial)</span>}
+                    </td>
+                    <td className="px-4 py-3 text-brand-grey">{formatData(recebimento.dataPrevista)}</td>
+                    <td className="px-4 py-3 text-brand-grey">
+                      {recebimento.dataEmissaoNF ? formatData(recebimento.dataEmissaoNF) : "—"}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

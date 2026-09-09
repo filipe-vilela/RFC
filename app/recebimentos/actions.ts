@@ -9,6 +9,7 @@ function readRecebimentoFormData(formData: FormData) {
   const dataRealizadaRaw = String(formData.get("dataRealizada") ?? "").trim();
   const dataEmissaoNFRaw = String(formData.get("dataEmissaoNF") ?? "").trim();
   const valorRealizadoRaw = String(formData.get("valorRealizado") ?? "").trim();
+  const valorNFRaw = String(formData.get("valorNF") ?? "").trim();
 
   return {
     contratoId: String(formData.get("contratoId") ?? ""),
@@ -17,6 +18,8 @@ function readRecebimentoFormData(formData: FormData) {
     dataPrevista: new Date(String(formData.get("dataPrevista"))),
     dataRealizada: dataRealizadaRaw ? new Date(dataRealizadaRaw) : null,
     dataEmissaoNF: dataEmissaoNFRaw ? new Date(dataEmissaoNFRaw) : null,
+    emitirNF: formData.get("emitirNF") === "on",
+    valorNF: valorNFRaw ? Number(valorNFRaw) : null,
     status: String(formData.get("status")) as StatusRecebimento,
   };
 }

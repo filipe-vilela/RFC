@@ -70,6 +70,11 @@ enum FrequenciaAtendimento {
   MENSAL
 }
 
+enum TipoDesconto {
+  PERCENTUAL
+  VALOR_FIXO
+}
+
 model Cliente {
   id             String        @id @default(cuid())
   nome           String
@@ -110,13 +115,15 @@ model Contrato {
 }
 
 model Desconto {
-  id         String   @id @default(cuid())
-  contrato   Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  id         String       @id @default(cuid())
+  contrato   Contrato     @relation(fields: [contratoId], references: [id], onDelete: Cascade)
   contratoId String
-  percentual Float
+  tipo       TipoDesconto @default(PERCENTUAL)
+  percentual Float?
+  valorFixo  Float?
   mesInicio  Int
   mesFim     Int
-  createdAt  DateTime @default(now())
+  createdAt  DateTime     @default(now())
 }
 
 /**
@@ -145,6 +152,8 @@ model Recebimento {
   dataPrevista  DateTime
   dataRealizada DateTime?
   dataEmissaoNF DateTime?
+  emitirNF      Boolean           @default(true)
+  valorNF       Float?
   status        StatusRecebimento @default(PENDENTE)
   origem        OrigemRecebimento @default(GERADO_AUTOMATICAMENTE)
   createdAt     DateTime          @default(now())

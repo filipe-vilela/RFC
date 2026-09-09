@@ -17,7 +17,13 @@ type ContratoDefaultValues = {
   status: string;
   diaAtendimento: string | null;
   frequenciaAtendimento: string;
-  descontos?: { percentual: number; mesInicio: number; mesFim: number }[];
+  descontos?: {
+    tipo: string;
+    percentual: number | null;
+    valorFixo: number | null;
+    mesInicio: number;
+    mesFim: number;
+  }[];
 };
 
 export function ContratoForm({

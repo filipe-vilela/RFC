@@ -43,15 +43,23 @@ function readNovoClienteFormData(formData: FormData) {
 }
 
 function readDescontosFormData(formData: FormData) {
+  const tipos = formData.getAll("descontoTipo");
   const percentuais = formData.getAll("descontoPercentual");
+  const valoresFixos = formData.getAll("descontoValorFixo");
   const mesesInicio = formData.getAll("descontoMesInicio");
   const mesesFim = formData.getAll("descontoMesFim");
 
-  return percentuais.map((percentual, i) => ({
-    percentual: Number(percentual),
-    mesInicio: Number(mesesInicio[i]),
-    mesFim: Number(mesesFim[i]),
-  }));
+  return tipos.map((tipoRaw, i) => {
+    const tipo: "PERCENTUAL" | "VALOR_FIXO" =
+      String(tipoRaw) === "VALOR_FIXO" ? "VALOR_FIXO" : "PERCENTUAL";
+    return {
+      tipo,
+      percentual: tipo === "PERCENTUAL" ? Number(percentuais[i]) : null,
+      valorFixo: tipo === "VALOR_FIXO" ? Number(valoresFixos[i]) : null,
+      mesInicio: Number(mesesInicio[i]),
+      mesFim: Number(mesesFim[i]),
+    };
+  });
 }
 
 export async function createContrato(formData: FormData) {

@@ -31,6 +31,11 @@ export const STATUS_RECEBIMENTO_EFETIVO = {
   ATRASADO: "Atrasado",
 } as const;
 
+export const TIPO_DESCONTO = {
+  PERCENTUAL: "Percentual (%)",
+  VALOR_FIXO: "Valor fixo (R$)",
+} as const;
+
 export const FREQUENCIA_ATENDIMENTO = {
   SEMANAL: "Semanal",
   QUINZENAL: "Quinzenal",

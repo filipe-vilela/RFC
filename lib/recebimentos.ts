@@ -18,7 +18,13 @@ function calcularDataEmissaoNF(dataPrevista: Date, diaVencimento: number | null 
   return new Date(Date.UTC(ano, mes, Math.min(diaVencimento, ultimoDiaDoMes)));
 }
 
-type DescontoContrato = { percentual: number; mesInicio: number; mesFim: number };
+type DescontoContrato = {
+  tipo: "PERCENTUAL" | "VALOR_FIXO";
+  percentual: number | null;
+  valorFixo: number | null;
+  mesInicio: number;
+  mesFim: number;
+};
 
 type ItemAgenda = { dataPrevista: Date; valorPrevisto: number; dataEmissaoNF: Date | null };
 
@@ -31,7 +37,10 @@ function aplicarDesconto(
     (d) => mesDaParcela >= d.mesInicio && mesDaParcela <= d.mesFim,
   );
   if (!desconto) return valor;
-  return Math.round(valor * (1 - desconto.percentual / 100) * 100) / 100;
+  if (desconto.tipo === "VALOR_FIXO") {
+    return Math.max(0, Math.round((valor - (desconto.valorFixo ?? 0)) * 100) / 100);
+  }
+  return Math.round(valor * (1 - (desconto.percentual ?? 0) / 100) * 100) / 100;
 }
 
 /**

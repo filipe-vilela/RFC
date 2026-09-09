@@ -10,6 +10,8 @@ type RecebimentoDefaultValues = {
   dataPrevista: Date;
   dataRealizada: Date | null;
   dataEmissaoNF: Date | null;
+  emitirNF: boolean;
+  valorNF: number | null;
   status: string;
 };
 
@@ -121,17 +123,27 @@ export function RecebimentoForm({
           <label className={labelClass} htmlFor="dataEmissaoNF">
             Data de emissão da NF
           </label>
-          <input
-            id="dataEmissaoNF"
-            name="dataEmissaoNF"
-            type="date"
-            defaultValue={
-              defaultValues?.dataEmissaoNF
-                ? formatDataInput(defaultValues.dataEmissaoNF)
-                : undefined
-            }
-            className={inputClass}
-          />
+          <div className="flex items-center gap-3">
+            <input
+              id="dataEmissaoNF"
+              name="dataEmissaoNF"
+              type="date"
+              defaultValue={
+                defaultValues?.dataEmissaoNF
+                  ? formatDataInput(defaultValues.dataEmissaoNF)
+                  : undefined
+              }
+              className={inputClass + " flex-1"}
+            />
+            <label className="flex items-center gap-1.5 whitespace-nowrap text-sm text-brand-text">
+              <input
+                type="checkbox"
+                name="emitirNF"
+                defaultChecked={defaultValues?.emitirNF ?? true}
+              />
+              Emitir NF
+            </label>
+          </div>
         </div>
         <div>
           <label className={labelClass} htmlFor="status">
@@ -151,6 +163,25 @@ export function RecebimentoForm({
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor="valorNF">
+          Valor da NF (R$)
+        </label>
+        <input
+          id="valorNF"
+          name="valorNF"
+          type="number"
+          step="0.01"
+          min="0"
+          defaultValue={defaultValues?.valorNF ?? ""}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-brand-grey">
+          Deixe em branco para emitir pelo valor previsto da parcela. Preencha só quando a NF for
+          por um valor parcial.
+        </p>
       </div>
 
       <div className="flex gap-3 pt-2">

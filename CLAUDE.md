@@ -75,12 +75,14 @@ Tailwind em `app/globals.css` (`@theme inline`):
   (enum `DiaSemana`, selecionado — não é mais texto livre),
   `frequenciaAtendimento` (semanal/quinzenal/mensal), `renovadoAte`
   (ver "Renovação de contrato")
-- **Desconto** — vinculado a um Contrato; `percentual`, `mesInicio`,
-  `mesFim` (mês corrido desde o início do contrato)
+- **Desconto** — vinculado a um Contrato; `tipo` (percentual ou valor
+  fixo em R$), `percentual`/`valorFixo` (só um dos dois é usado, conforme
+  `tipo`), `mesInicio`, `mesFim` (mês corrido desde o início do contrato)
 - **Recebimento** — vinculado a um Contrato; valor previsto/realizado, data
   prevista/realizada, `dataEmissaoNF` (preenchida automaticamente a partir
-  do Cliente, editável), status (pendente/pago — "atrasado" é derivado,
-  ver "Status derivado"), origem
+  do Cliente, editável), `emitirNF` (se essa parcela deve gerar NF),
+  `valorNF` (opcional, para NF por valor parcial), status (pendente/pago —
+  "atrasado" é derivado, ver "Status derivado"), origem
   (gerado automaticamente vs. lançado manualmente)
 - **Compromisso** — vinculado opcionalmente a um Contrato; título,
   descrição, data, tipo (entrega/reunião/prazo interno/atendimento
@@ -147,9 +149,20 @@ existente é caso raro e não precisa desse atalho.
 
 ### Descontos por período (`Desconto`, `lib/recebimentos.ts`)
 
-- Um contrato pode ter várias faixas de desconto (`percentual`, `mesInicio`,
+- Um contrato pode ter várias faixas de desconto (`tipo`, `mesInicio`,
   `mesFim`), cadastradas em `ContratoForm` via `DescontosCampo.tsx` (client
-  component só para adicionar/remover linhas antes de enviar o form).
+  component só para adicionar/remover linhas e alternar o tipo antes de
+  enviar o form).
+- Cada faixa é **percentual OU valor fixo em R$** (`Desconto.tipo`, enum
+  `TipoDesconto`) — nunca os dois ao mesmo tempo. `percentual` e
+  `valorFixo` são ambos opcionais no schema; qual dos dois vale é decidido
+  pelo `tipo`, tanto na leitura do formulário (`readDescontosFormData`,
+  `app/contratos/actions.ts`) quanto no cálculo (`aplicarDesconto`,
+  `lib/recebimentos.ts` — percentual reduz proporcionalmente, valor fixo
+  subtrai um valor absoluto da parcela, nunca deixando o resultado negativo).
+  `DescontosCampo.tsx` sempre renderiza os dois campos de valor por linha
+  (um escondido via CSS, não `disabled`) para manter os arrays de
+  `FormData` alinhados por índice mesmo com tipos diferentes por linha.
 - `mesDaParcela` é contado em meses corridos desde `dataInicio`
   independente da periodicidade (ex.: a 2ª parcela trimestral cai no mês
   4) — assim "20% nos 3 primeiros meses, 10% do 4º ao 6º" cobre
@@ -226,6 +239,16 @@ existente é caso raro e não precisa desse atalho.
   recebimentos previstos ordenados por essa data, com um botão de
   impressão (`window.print()` + variante `print:` do Tailwind escondendo
   nav/filtros/botões).
+- `Recebimento.emitirNF` (boolean, default `true`) marca se aquela parcela
+  deve ou não gerar NF — desmarcado, ela some da relação de notas fiscais
+  (`/recebimentos/notas-fiscais` filtra `emitirNF: true`), mas continua
+  normalmente na listagem de Recebimentos. `Recebimento.valorNF` é opcional
+  e serve para NF por valor parcial (ex.: cliente pede para faturar só
+  parte do mês); quando `null`, a relação de notas fiscais usa
+  `valorPrevisto` como valor da nota — só quando `valorNF` está preenchido
+  e é diferente do previsto que a linha é marcada como "(parcial)" na
+  listagem. Os dois campos ficam no formulário de Recebimento ao lado do
+  campo de data de emissão da NF.
 
 ### Remarcar atendimento arrastando no calendário (`AtendimentoExcecao`)
 
@@ -307,6 +330,11 @@ existente é caso raro e não precisa desse atalho.
       `moverAtendimento`, grade extraída para `app/calendario/CalendarioGrid.tsx`
       (client component); ver "Remarcar atendimento arrastando no
       calendário"
+- [x] Desconto por valor fixo em R$ (além do percentual já existente) —
+      `Desconto.tipo` (enum `TipoDesconto`); Recebimento com flag
+      `emitirNF` (emite ou não NF daquela parcela) e `valorNF` opcional
+      para NF por valor parcial — ver "Descontos por período" e "Ações em
+      lote e impressão de notas fiscais"
 
 ## Comandos úteis
 
