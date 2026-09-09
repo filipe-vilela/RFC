@@ -32,8 +32,8 @@ export function NavLinks() {
             className={
               "border-b-2 pb-0.5 text-sm font-medium transition-colors " +
               (ativo
-                ? "border-brand-orange text-white"
-                : "border-transparent text-[#D6DAEE] hover:text-white")
+                ? "border-brand-orange text-brand-navy"
+                : "border-transparent text-brand-grey hover:text-brand-navy")
             }
           >
             {link.label}

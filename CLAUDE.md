@@ -19,16 +19,26 @@ Paleta e tipografia extraídas de um relatório de referência do usuário
 Tailwind em `app/globals.css` (`@theme inline`):
 
 - `brand-navy` `#0D1B4B` / `brand-navy-light` `#1B2E6B` — cor primária
-  (header, títulos, cabeçalho de tabelas)
+  (títulos, cabeçalho de tabelas, texto do link ativo na navegação)
 - `brand-orange` `#E8720C` (hover `brand-orange-dark` `#CC640A`) /
   `brand-orange-light` `#FCEFE2` — cor de destaque (botões primários,
-  links, badges de atendimento)
+  links, badges de atendimento, sublinhado do link ativo na navegação)
 - `brand-grey` `#5B6270` / `brand-grey-light` `#F4F5F7` — texto secundário
   e fundo da página
 - `brand-border` `#E4E6EC` / `brand-text` `#22263A`
 - Fontes via `next/font/google`: **DM Serif Display** para
   títulos (`h1`-`h4`, regra global em `globals.css`) e **DM Sans** para o
   corpo do texto
+- Logo oficial em `public/logo-real-forte.png` (recebido do usuário via
+  Google Drive, recortado para remover a margem transparente ao redor da
+  arte — o arquivo original tinha bastante espaço em branco acima/abaixo,
+  o que deixava a marca pequena demais num header comum). Usado no
+  cabeçalho (`app/layout.tsx`, via `next/image`) em `h-14 w-auto`. Como o
+  logo já é colorido (navy + laranja) pensado pra fundo claro, o header
+  é **branco** com uma borda inferior sutil (`border-brand-border`) — não
+  dá pra usar o logo sobre o fundo navy que o header tinha antes, o navy
+  do desenho ficaria invisível. `NavLinks.tsx` foi ajustado para essas
+  cores claras (texto navy/cinza em vez de branco).
 - Cores semânticas (vermelho para erro/inadimplência, verde para
   concluído) foram mantidas fora da paleta da marca de propósito, para não
   se confundirem com o laranja de destaque
@@ -335,6 +345,10 @@ existente é caso raro e não precisa desse atalho.
       `emitirNF` (emite ou não NF daquela parcela) e `valorNF` opcional
       para NF por valor parcial — ver "Descontos por período" e "Ações em
       lote e impressão de notas fiscais"
+- [x] Logo oficial da Real Forte Consultoria no header (`public/logo-real-forte.png`,
+      `app/layout.tsx`) — header passou de navy para branco pra dar
+      contraste ao logo colorido; `NavLinks.tsx` ajustado pras novas cores
+      — ver "Identidade visual"
 
 ## Comandos úteis
 

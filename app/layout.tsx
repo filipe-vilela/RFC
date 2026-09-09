@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { DM_Sans, DM_Serif_Display } from "next/font/google";
 import { NavLinks } from "@/app/components/NavLinks";
 import "./globals.css";
@@ -27,9 +28,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${dmSans.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-brand-grey-light text-brand-text">
-        <header className="bg-brand-navy print:hidden">
+        <header className="border-b border-brand-border bg-white print:hidden">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-8 gap-y-3 px-6 py-4">
-            <span className="font-serif text-lg text-white">Gestão RFC</span>
+            <Image
+              src="/logo-real-forte.png"
+              alt="Real Forte Consultoria"
+              width={1793}
+              height={486}
+              priority
+              className="h-14 w-auto"
+            />
             <NavLinks />
           </div>
         </header>
