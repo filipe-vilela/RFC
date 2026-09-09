@@ -1,5 +1,6 @@
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../app/generated/prisma/client";
+import { sincronizarRecebimentosAutomaticos } from "../lib/recebimentos";
 
 const adapter = new PrismaBetterSqlite3({
   url: process.env.DATABASE_URL ?? "file:./dev.db",
@@ -48,8 +49,16 @@ async function main() {
       dataInicio: new Date("2026-01-01"),
       dataFim: new Date("2026-12-31"),
       status: "ATIVO",
-      diaAtendimento: "quinta-feira",
+      diaAtendimento: "QUINTA",
+      frequenciaAtendimento: "SEMANAL",
+      descontos: {
+        create: [
+          { percentual: 20, mesInicio: 1, mesFim: 3 },
+          { percentual: 10, mesInicio: 4, mesFim: 6 },
+        ],
+      },
     },
+    include: { descontos: true },
   });
 
   const contratoB = await prisma.contrato.create({
@@ -61,11 +70,13 @@ async function main() {
       periodicidade: "TRIMESTRAL",
       dataInicio: new Date("2026-02-01"),
       status: "ATIVO",
-      diaAtendimento: "segunda-feira",
+      diaAtendimento: "SEGUNDA",
+      frequenciaAtendimento: "QUINZENAL",
     },
+    include: { descontos: true },
   });
 
-  await prisma.contrato.create({
+  const contratoC = await prisma.contrato.create({
     data: {
       clienteId: clienteC.id,
       numero: "CT-2025-014",
@@ -76,38 +87,43 @@ async function main() {
       dataFim: new Date("2025-10-31"),
       status: "ENCERRADO",
     },
+    include: { descontos: true },
   });
 
-  await prisma.recebimento.create({
-    data: {
-      contratoId: contratoA.id,
-      valorPrevisto: 3500,
-      dataPrevista: new Date("2026-09-05"),
-      status: "PENDENTE",
-      origem: "GERADO_AUTOMATICAMENTE",
-    },
+  // Gera as parcelas reais (com desconto aplicado) pela mesma função usada
+  // pelo app, em vez de valores fixos — assim o seed reflete o comportamento
+  // de verdade do sistema.
+  await prisma.$transaction(async (tx) => {
+    await sincronizarRecebimentosAutomaticos(tx, contratoA.id, contratoA);
+    await sincronizarRecebimentosAutomaticos(tx, contratoB.id, contratoB);
+    await sincronizarRecebimentosAutomaticos(tx, contratoC.id, contratoC);
   });
 
-  await prisma.recebimento.create({
-    data: {
-      contratoId: contratoA.id,
-      valorPrevisto: 3500,
-      valorRealizado: 3500,
-      dataPrevista: new Date("2026-08-05"),
-      dataRealizada: new Date("2026-08-04"),
-      status: "PAGO",
-      origem: "GERADO_AUTOMATICAMENTE",
-    },
+  // Marca como pagas a parcela única da Gama (contrato encerrado) e a
+  // parcela de agosto da Alfa, e adiciona a data de emissão de NF na
+  // próxima parcela pendente da Alfa.
+  const recebimentoC = await prisma.recebimento.findFirstOrThrow({
+    where: { contratoId: contratoC.id },
+  });
+  await prisma.recebimento.update({
+    where: { id: recebimentoC.id },
+    data: { status: "PAGO", valorRealizado: recebimentoC.valorPrevisto, dataRealizada: new Date("2025-10-05") },
   });
 
-  await prisma.recebimento.create({
-    data: {
-      contratoId: contratoB.id,
-      valorPrevisto: 12000,
-      dataPrevista: new Date("2026-08-01"),
-      status: "ATRASADO",
-      origem: "GERADO_AUTOMATICAMENTE",
-    },
+  const recebimentoAgostoA = await prisma.recebimento.findFirstOrThrow({
+    where: { contratoId: contratoA.id, dataPrevista: new Date("2026-08-01") },
+  });
+  await prisma.recebimento.update({
+    where: { id: recebimentoAgostoA.id },
+    data: { status: "PAGO", valorRealizado: recebimentoAgostoA.valorPrevisto, dataRealizada: new Date("2026-08-04") },
+  });
+
+  const recebimentoSetembroA = await prisma.recebimento.findFirstOrThrow({
+    where: { contratoId: contratoA.id, dataPrevista: new Date("2026-09-01") },
+  });
+  await prisma.recebimento.update({
+    where: { id: recebimentoSetembroA.id },
+    data: { dataEmissaoNF: new Date("2026-09-01") },
   });
 
   await prisma.compromisso.create({

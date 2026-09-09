@@ -10,7 +10,7 @@ export default async function EditarContratoPage({
 }: PageProps<"/contratos/[id]/editar">) {
   const { id } = await params;
   const [contrato, clientes] = await Promise.all([
-    prisma.contrato.findUnique({ where: { id } }),
+    prisma.contrato.findUnique({ where: { id }, include: { descontos: true } }),
     prisma.cliente.findMany({
       orderBy: { nome: "asc" },
       select: { id: true, nome: true },

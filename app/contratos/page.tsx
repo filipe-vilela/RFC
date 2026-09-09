@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { deleteContrato } from "./actions";
+import { deleteContrato, renovarContrato } from "./actions";
 import { DeleteButton } from "../components/DeleteButton";
 import { FilterBar } from "../components/FilterBar";
 import { PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
-import { buttonPrimaryClass, linkClass } from "@/lib/ui";
+import { buttonPrimaryClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
 import { formatData, formatMoeda } from "@/lib/format";
 import { paramString } from "@/lib/query-params";
 import type { Prisma, StatusContrato } from "@/app/generated/prisma/client";
@@ -108,6 +108,13 @@ export default async function ContratosPage({
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
+                      {!contrato.dataFim && (
+                        <form action={renovarContrato.bind(null, contrato.id)}>
+                          <button type="submit" className={buttonSecondaryClass}>
+                            Renovar +12m
+                          </button>
+                        </form>
+                      )}
                       <Link
                         href={`/contratos/${contrato.id}/editar`}
                         className={linkClass}

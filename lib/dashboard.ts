@@ -41,6 +41,9 @@ export async function getDashboardData() {
   const totalRecebidoNoMes = recebimentosDoMes
     .filter((r) => r.status === "PAGO")
     .reduce((soma, r) => soma + (r.valorRealizado ?? 0), 0);
+  const totalAReceberNoMes = recebimentosDoMes
+    .filter((r) => r.status === "PENDENTE" && r.dataPrevista >= hoje)
+    .reduce((soma, r) => soma + r.valorPrevisto, 0);
   const totalInadimplente = inadimplentes.reduce(
     (soma, r) => soma + r.valorPrevisto,
     0,
@@ -49,6 +52,7 @@ export async function getDashboardData() {
   return {
     totalPrevistoNoMes,
     totalRecebidoNoMes,
+    totalAReceberNoMes,
     contratosAtivos,
     inadimplentes,
     totalInadimplente,

@@ -9,8 +9,11 @@ type RecebimentoDefaultValues = {
   valorRealizado: number | null;
   dataPrevista: Date;
   dataRealizada: Date | null;
+  dataEmissaoNF: Date | null;
   status: string;
 };
+
+const STATUS_SELECIONAVEL = { PENDENTE: STATUS_RECEBIMENTO.PENDENTE, PAGO: STATUS_RECEBIMENTO.PAGO };
 
 export function RecebimentoForm({
   action,
@@ -113,23 +116,41 @@ export function RecebimentoForm({
         </div>
       </div>
 
-      <div>
-        <label className={labelClass} htmlFor="status">
-          Status *
-        </label>
-        <select
-          id="status"
-          name="status"
-          required
-          defaultValue={defaultValues?.status ?? "PENDENTE"}
-          className={inputClass}
-        >
-          {Object.entries(STATUS_RECEBIMENTO).map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass} htmlFor="dataEmissaoNF">
+            Data de emissão da NF
+          </label>
+          <input
+            id="dataEmissaoNF"
+            name="dataEmissaoNF"
+            type="date"
+            defaultValue={
+              defaultValues?.dataEmissaoNF
+                ? formatDataInput(defaultValues.dataEmissaoNF)
+                : undefined
+            }
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="status">
+            Status *
+          </label>
+          <select
+            id="status"
+            name="status"
+            required
+            defaultValue={defaultValues?.status === "ATRASADO" ? "PENDENTE" : defaultValues?.status ?? "PENDENTE"}
+            className={inputClass}
+          >
+            {Object.entries(STATUS_SELECIONAVEL).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex gap-3 pt-2">

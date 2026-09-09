@@ -27,7 +27,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${dmSans.variable} ${dmSerifDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-brand-grey-light text-brand-text">
-        <header className="bg-brand-navy">
+        <header className="bg-brand-navy print:hidden">
           <div className="mx-auto flex max-w-5xl flex-wrap items-center gap-x-8 gap-y-3 px-6 py-4">
             <span className="font-serif text-lg text-white">Gestão RFC</span>
             <NavLinks />

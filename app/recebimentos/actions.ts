@@ -7,6 +7,7 @@ import type { StatusRecebimento } from "@/app/generated/prisma/client";
 
 function readRecebimentoFormData(formData: FormData) {
   const dataRealizadaRaw = String(formData.get("dataRealizada") ?? "").trim();
+  const dataEmissaoNFRaw = String(formData.get("dataEmissaoNF") ?? "").trim();
   const valorRealizadoRaw = String(formData.get("valorRealizado") ?? "").trim();
 
   return {
@@ -15,6 +16,7 @@ function readRecebimentoFormData(formData: FormData) {
     valorRealizado: valorRealizadoRaw ? Number(valorRealizadoRaw) : null,
     dataPrevista: new Date(String(formData.get("dataPrevista"))),
     dataRealizada: dataRealizadaRaw ? new Date(dataRealizadaRaw) : null,
+    dataEmissaoNF: dataEmissaoNFRaw ? new Date(dataEmissaoNFRaw) : null,
     status: String(formData.get("status")) as StatusRecebimento,
   };
 }
@@ -52,5 +54,33 @@ export async function marcarComoPago(id: string) {
       valorRealizado: recebimento.valorRealizado ?? recebimento.valorPrevisto,
     },
   });
+  revalidatePath("/recebimentos");
+}
+
+export async function excluirSelecionados(formData: FormData) {
+  const ids = formData.getAll("ids").map(String);
+  if (ids.length > 0) {
+    await prisma.recebimento.deleteMany({ where: { id: { in: ids } } });
+  }
+  revalidatePath("/recebimentos");
+}
+
+export async function marcarSelecionadosComoPago(formData: FormData) {
+  const ids = formData.getAll("ids").map(String);
+  if (ids.length === 0) return;
+
+  const recebimentos = await prisma.recebimento.findMany({ where: { id: { in: ids } } });
+  await prisma.$transaction(
+    recebimentos.map((recebimento) =>
+      prisma.recebimento.update({
+        where: { id: recebimento.id },
+        data: {
+          status: "PAGO",
+          dataRealizada: new Date(),
+          valorRealizado: recebimento.valorRealizado ?? recebimento.valorPrevisto,
+        },
+      }),
+    ),
+  );
   revalidatePath("/recebimentos");
 }

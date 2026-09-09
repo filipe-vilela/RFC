@@ -1,26 +1,28 @@
 "use client";
 
-import { buttonDangerClass } from "@/lib/ui";
-
-export function DeleteButton({
+export function ConfirmButton({
   confirmMessage,
   formAction,
+  className,
+  children,
 }: {
   confirmMessage: string;
-  formAction?: (formData: FormData) => void;
+  formAction: (formData: FormData) => void;
+  className: string;
+  children: React.ReactNode;
 }) {
   return (
     <button
       type="submit"
       formAction={formAction}
-      className={buttonDangerClass}
+      className={className}
       onClick={(event) => {
         if (!confirm(confirmMessage)) {
           event.preventDefault();
         }
       }}
     >
-      Excluir
+      {children}
     </button>
   );
 }

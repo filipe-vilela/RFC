@@ -6,8 +6,10 @@ export const STATUS_CLIENTE = {
 export const PERIODICIDADE = {
   MENSAL: "Mensal",
   TRIMESTRAL: "Trimestral",
+  ANUAL: "Anual",
   UNICO: "Único",
   POR_FASE: "Por fase",
+  INDETERMINADO: "Indeterminado",
 } as const;
 
 export const STATUS_CONTRATO = {
@@ -20,6 +22,19 @@ export const STATUS_RECEBIMENTO = {
   PENDENTE: "Pendente",
   PAGO: "Pago",
   ATRASADO: "Atrasado",
+} as const;
+
+/** Rótulos do status efetivo (derivado da data) — usados na exibição. */
+export const STATUS_RECEBIMENTO_EFETIVO = {
+  PENDENTE: "A receber",
+  PAGO: "Pago",
+  ATRASADO: "Atrasado",
+} as const;
+
+export const FREQUENCIA_ATENDIMENTO = {
+  SEMANAL: "Semanal",
+  QUINZENAL: "Quinzenal",
+  MENSAL: "Mensal",
 } as const;
 
 export const ORIGEM_RECEBIMENTO = {

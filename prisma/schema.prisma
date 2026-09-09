@@ -18,8 +18,10 @@ enum StatusCliente {
 enum Periodicidade {
   MENSAL
   TRIMESTRAL
+  ANUAL
   UNICO
   POR_FASE
+  INDETERMINADO
 }
 
 enum StatusContrato {
@@ -52,6 +54,22 @@ enum StatusCompromisso {
   CANCELADO
 }
 
+enum DiaSemana {
+  DOMINGO
+  SEGUNDA
+  TERCA
+  QUARTA
+  QUINTA
+  SEXTA
+  SABADO
+}
+
+enum FrequenciaAtendimento {
+  SEMANAL
+  QUINZENAL
+  MENSAL
+}
+
 model Cliente {
   id             String        @id @default(cuid())
   nome           String
@@ -68,22 +86,35 @@ model Cliente {
 }
 
 model Contrato {
-  id             String          @id @default(cuid())
-  cliente        Cliente         @relation(fields: [clienteId], references: [id])
-  clienteId      String
-  numero         String
-  escopo         String?
-  valor          Float
-  periodicidade  Periodicidade
-  dataInicio     DateTime
-  dataFim        DateTime?
-  status         StatusContrato  @default(ATIVO)
-  diaAtendimento String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                    String                @id @default(cuid())
+  cliente               Cliente               @relation(fields: [clienteId], references: [id])
+  clienteId             String
+  numero                String
+  escopo                String?
+  valor                 Float
+  periodicidade         Periodicidade
+  dataInicio            DateTime
+  dataFim               DateTime?
+  status                StatusContrato        @default(ATIVO)
+  diaAtendimento        DiaSemana?
+  frequenciaAtendimento FrequenciaAtendimento @default(SEMANAL)
+  renovadoAte           DateTime?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
 
-  recebimentos   Recebimento[]
-  compromissos   Compromisso[]
+  recebimentos          Recebimento[]
+  compromissos          Compromisso[]
+  descontos             Desconto[]
+}
+
+model Desconto {
+  id         String   @id @default(cuid())
+  contrato   Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  contratoId String
+  percentual Float
+  mesInicio  Int
+  mesFim     Int
+  createdAt  DateTime @default(now())
 }
 
 model Recebimento {
@@ -94,6 +125,7 @@ model Recebimento {
   valorRealizado Float?
   dataPrevista  DateTime
   dataRealizada DateTime?
+  dataEmissaoNF DateTime?
   status        StatusRecebimento @default(PENDENTE)
   origem        OrigemRecebimento @default(GERADO_AUTOMATICAMENTE)
   createdAt     DateTime          @default(now())

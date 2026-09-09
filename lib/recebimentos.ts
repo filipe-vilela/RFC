@@ -9,37 +9,65 @@ function addMeses(data: Date, meses: number): Date {
   );
 }
 
+type DescontoContrato = { percentual: number; mesInicio: number; mesFim: number };
+
 type ItemAgenda = { dataPrevista: Date; valorPrevisto: number };
+
+function aplicarDesconto(
+  valor: number,
+  mesDaParcela: number,
+  descontos: DescontoContrato[],
+): number {
+  const desconto = descontos.find(
+    (d) => mesDaParcela >= d.mesInicio && mesDaParcela <= d.mesFim,
+  );
+  if (!desconto) return valor;
+  return Math.round(valor * (1 - desconto.percentual / 100) * 100) / 100;
+}
 
 /**
  * Monta a programação de recebimentos previstos a partir da periodicidade do
  * contrato. Contratos "por fase" não têm datas previsíveis, então ficam de
  * fora — os recebimentos desses contratos são lançados manualmente.
+ *
+ * `mesDaParcela` (usado para casar com os `descontos`) é sempre contado em
+ * meses corridos desde `dataInicio`, mesmo para periodicidade trimestral ou
+ * anual — assim "20% nos 3 primeiros meses" cobre certinho a 1ª parcela
+ * trimestral, e "10% do 4º ao 6º mês" cobre a 2ª.
  */
 export function montarProgramacaoRecebimentos(contrato: {
   valor: number;
   periodicidade: Periodicidade;
   dataInicio: Date;
   dataFim: Date | null;
+  renovadoAte?: Date | null;
+  descontos?: DescontoContrato[];
 }): ItemAgenda[] {
   const { valor, periodicidade, dataInicio, dataFim } = contrato;
+  const descontos = contrato.descontos ?? [];
 
   if (periodicidade === "UNICO") {
-    return [{ dataPrevista: dataInicio, valorPrevisto: valor }];
+    return [{ dataPrevista: dataInicio, valorPrevisto: aplicarDesconto(valor, 1, descontos) }];
   }
 
   if (periodicidade === "POR_FASE") {
     return [];
   }
 
-  const intervaloMeses = periodicidade === "MENSAL" ? 1 : 3;
-  const limite = dataFim ?? addMeses(dataInicio, HORIZONTE_PADRAO_MESES);
+  const intervaloMeses =
+    periodicidade === "TRIMESTRAL" ? 3 : periodicidade === "ANUAL" ? 12 : 1;
+  const limite = dataFim ?? contrato.renovadoAte ?? addMeses(dataInicio, HORIZONTE_PADRAO_MESES);
 
   const programacao: ItemAgenda[] = [];
+  let mesDaParcela = 1;
   let dataAtual = dataInicio;
   while (dataAtual <= limite) {
-    programacao.push({ dataPrevista: dataAtual, valorPrevisto: valor });
+    programacao.push({
+      dataPrevista: dataAtual,
+      valorPrevisto: aplicarDesconto(valor, mesDaParcela, descontos),
+    });
     dataAtual = addMeses(dataAtual, intervaloMeses);
+    mesDaParcela += intervaloMeses;
   }
   return programacao;
 }
@@ -58,6 +86,8 @@ export async function sincronizarRecebimentosAutomaticos(
     periodicidade: Periodicidade;
     dataInicio: Date;
     dataFim: Date | null;
+    renovadoAte?: Date | null;
+    descontos?: DescontoContrato[];
   },
 ) {
   const programacao = montarProgramacaoRecebimentos(contrato);

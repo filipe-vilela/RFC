@@ -68,18 +68,25 @@ Tailwind em `app/globals.css` (`@theme inline`):
 
 - **Cliente** — nome, CNPJ, contato, setor, status (ativo/inativo)
 - **Contrato** — vinculado a um Cliente; número, escopo, valor,
-  periodicidade (mensal/trimestral/único/por fase), data início/fim, status
-  (ativo/encerrado/suspenso), `diaAtendimento` (dia fixo de atendimento,
-  texto livre, ex. "quinta-feira")
+  periodicidade (mensal/trimestral/anual/único/por fase/indeterminado),
+  data início/fim, status (ativo/encerrado/suspenso), `diaAtendimento`
+  (enum `DiaSemana`, selecionado — não é mais texto livre),
+  `frequenciaAtendimento` (semanal/quinzenal/mensal), `renovadoAte`
+  (ver "Renovação de contrato")
+- **Desconto** — vinculado a um Contrato; `percentual`, `mesInicio`,
+  `mesFim` (mês corrido desde o início do contrato)
 - **Recebimento** — vinculado a um Contrato; valor previsto/realizado, data
-  prevista/realizada, status (pendente/pago/atrasado), origem
+  prevista/realizada, `dataEmissaoNF` (preenchida manualmente), status
+  (pendente/pago — "atrasado" é derivado, ver "Status derivado"), origem
   (gerado automaticamente vs. lançado manualmente)
 - **Compromisso** — vinculado opcionalmente a um Contrato; título,
   descrição, data, tipo (entrega/reunião/prazo interno/atendimento
   recorrente), status
 
-Seed de exemplo em `prisma/seed.ts` (3 clientes, 3 contratos, 3
-recebimentos, 3 compromissos) — rodar com `npx prisma db seed`.
+Seed de exemplo em `prisma/seed.ts` (3 clientes, 3 contratos — um com
+desconto em faixas — e os recebimentos gerados de verdade por
+`sincronizarRecebimentosAutomaticos`, não valores fixos) — rodar com
+`npx prisma db seed`.
 
 ## Escopo desta primeira versão
 
@@ -93,7 +100,12 @@ Incluído:
    inadimplência
 4. Filtros por cliente, status e período nas listagens
 5. Calendário de atendimento (mensal/semanal) cruzando `diaAtendimento` dos
-   contratos ativos com os compromissos avulsos da Agenda
+   contratos ativos com os compromissos avulsos da Agenda, respeitando a
+   `frequenciaAtendimento` (semanal/quinzenal/mensal)
+6. Descontos por faixa de meses no contrato; renovação manual do
+   horizonte de recebimentos (contratos sem `dataFim`)
+7. Ações em lote (marcar como pago / excluir) e relação de notas fiscais
+   a emitir por mês, com impressão
 
 Fora do escopo (não implementar sem pedido explícito): emissão de nota
 fiscal, CRM completo, autenticação/multiusuário.
@@ -113,17 +125,80 @@ existente é caso raro e não precisa desse atalho.
 
 - Roda dentro de uma transação, logo após criar/atualizar um contrato
   (`app/contratos/actions.ts`).
-- MENSAL/TRIMESTRAL: uma parcela a cada 1/3 meses, de `dataInicio` até
-  `dataFim` (ou até `dataInicio` + 12 meses, se não houver `dataFim`).
-  UNICO: uma única parcela em `dataInicio`. POR_FASE: nenhuma parcela
-  automática — fica a critério de lançamento manual, já que fases não têm
-  data previsível.
+- MENSAL/INDETERMINADO: 1 parcela por mês. TRIMESTRAL: a cada 3 meses.
+  ANUAL: a cada 12 meses. Todas usam o mesmo horizonte: até `dataFim`, ou
+  até `renovadoAte` (ver "Renovação"), ou até `dataInicio` + 12 meses se
+  nenhum dos dois estiver definido. UNICO: uma única parcela em
+  `dataInicio`. POR_FASE: nenhuma parcela automática — fica a critério de
+  lançamento manual, já que fases não têm data previsível.
+  INDETERMINADO existe como opção separada de MENSAL só para deixar claro,
+  no cadastro, que o contrato não tem cadência formalmente definida — o
+  comportamento de geração é idêntico ao mensal.
 - A sincronização casa recebimentos existentes com a programação atual
   pela `dataPrevista` exata. Uma parcela com status `PAGO` nunca é alterada
   nem removida, mesmo que a edição do contrato a tire da programação
   (ex.: redução de `dataFim` depois de um pagamento). Parcelas pendentes
-  têm o `valorPrevisto` atualizado se o valor do contrato mudar; parcelas
-  que saem da programação e ainda não foram pagas são removidas.
+  têm o `valorPrevisto` atualizado se o valor do contrato ou os descontos
+  mudarem; parcelas que saem da programação e ainda não foram pagas são
+  removidas.
+
+### Descontos por período (`Desconto`, `lib/recebimentos.ts`)
+
+- Um contrato pode ter várias faixas de desconto (`percentual`, `mesInicio`,
+  `mesFim`), cadastradas em `ContratoForm` via `DescontosCampo.tsx` (client
+  component só para adicionar/remover linhas antes de enviar o form).
+- `mesDaParcela` é contado em meses corridos desde `dataInicio`
+  independente da periodicidade (ex.: a 2ª parcela trimestral cai no mês
+  4) — assim "20% nos 3 primeiros meses, 10% do 4º ao 6º" cobre
+  exatamente a 1ª e a 2ª parcela trimestral. Ao editar um contrato os
+  descontos são substituídos por completo (delete + recreate), não há
+  necessidade de diff já que não são um registro histórico como o
+  Recebimento.
+
+### Renovação de contrato (`renovarContrato`, campo `Contrato.renovadoAte`)
+
+- Contratos sem `dataFim` (horizonte rolante de 12 meses) "esgotam" esse
+  horizonte com o tempo, já que a geração só roda quando o contrato é
+  criado/editado. O botão "Renovar +12m" (listagem de Contratos, só
+  aparece quando não há `dataFim`) estende `renovadoAte` por mais 12 meses
+  a partir de hoje (ou do fim do horizonte atual, se ainda não tiver
+  chegado) e roda a sincronização de novo.
+
+### Status derivado do Recebimento (`lib/recebimento-status.ts`)
+
+- Por pedido do usuário, "atrasado" deixou de ser algo que se escolhe
+  manualmente: um recebimento é `PENDENTE` (exibido como "A receber") se
+  a `dataPrevista` ainda não chegou, ou `ATRASADO` se já passou — sempre
+  calculado na hora, nunca guardado. `ATRASADO` continua no enum do banco
+  só por causa dos dados antigos; o formulário de Recebimento não deixa
+  mais escolher esse valor.
+- `statusEfetivo()` calcula o rótulo pra exibição; `condicaoStatusEfetivo()`
+  traduz um filtro da URL (`PENDENTE`/`ATRASADO`/`PAGO`) pra condição
+  Prisma equivalente — usado tanto na listagem de Recebimentos quanto no
+  dashboard (inadimplência = `PENDENTE` com `dataPrevista` no passado).
+
+### Frequência do atendimento no calendário (`lib/calendario.ts`)
+
+- Além do dia da semana (`Contrato.diaAtendimento`, agora um enum
+  `DiaSemana` com `<select>` em vez de texto livre), o contrato tem
+  `frequenciaAtendimento` (semanal/quinzenal/mensal), calculada sempre a
+  partir da `dataInicio`: quinzenal repete a cada 2 semanas contadas desde
+  a semana de `dataInicio`; mensal repete só na mesma "ocorrência do mês"
+  (1ª, 2ª, 3ª... semana) em que `dataInicio` cai.
+
+### Ações em lote e impressão de notas fiscais (Recebimentos)
+
+- A listagem de Recebimentos é uma única `<form>` (sem forms aninhados);
+  cada linha tem um checkbox `name="ids"`, e os botões de ação usam a prop
+  `formAction` do React/Next para chamar Server Actions diferentes dentro
+  do mesmo form (inclusive as ações por linha, como "Marcar como pago" e
+  "Excluir"). `SelecionarTodos.tsx` e `ConfirmButton.tsx` são os únicos
+  client components envolvidos.
+- `Recebimento.dataEmissaoNF` é preenchido manualmente (não há regra
+  automática). `/recebimentos/notas-fiscais` lista, por mês, os
+  recebimentos previstos ordenados por essa data, com um botão de
+  impressão (`window.print()` + variante `print:` do Tailwind escondendo
+  nav/filtros/botões).
 
 ## Como conduzir o desenvolvimento
 

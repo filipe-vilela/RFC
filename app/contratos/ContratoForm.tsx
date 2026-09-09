@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { inputClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from "@/lib/ui";
-import { PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
+import { FREQUENCIA_ATENDIMENTO, PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
 import { formatDataInput } from "@/lib/format";
+import { DIAS_SEMANA_LABELS } from "@/lib/dias-semana";
 import { ClienteCampo } from "./ClienteCampo";
+import { DescontosCampo } from "./DescontosCampo";
 
 type ContratoDefaultValues = {
   clienteId: string;
@@ -14,6 +16,8 @@ type ContratoDefaultValues = {
   dataFim: Date | null;
   status: string;
   diaAtendimento: string | null;
+  frequenciaAtendimento: string;
+  descontos?: { percentual: number; mesInicio: number; mesFim: number }[];
 };
 
 export function ContratoForm({
@@ -173,18 +177,45 @@ export function ContratoForm({
         </div>
       </div>
 
-      <div>
-        <label className={labelClass} htmlFor="diaAtendimento">
-          Dia de atendimento
-        </label>
-        <input
-          id="diaAtendimento"
-          name="diaAtendimento"
-          placeholder="ex.: quinta-feira"
-          defaultValue={defaultValues?.diaAtendimento ?? ""}
-          className={inputClass}
-        />
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className={labelClass} htmlFor="diaAtendimento">
+            Dia de atendimento
+          </label>
+          <select
+            id="diaAtendimento"
+            name="diaAtendimento"
+            defaultValue={defaultValues?.diaAtendimento ?? ""}
+            className={inputClass}
+          >
+            <option value="">Nenhum</option>
+            {DIAS_SEMANA_LABELS.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass} htmlFor="frequenciaAtendimento">
+            Frequência do atendimento
+          </label>
+          <select
+            id="frequenciaAtendimento"
+            name="frequenciaAtendimento"
+            defaultValue={defaultValues?.frequenciaAtendimento ?? "SEMANAL"}
+            className={inputClass}
+          >
+            {Object.entries(FREQUENCIA_ATENDIMENTO).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      <DescontosCampo defaultValue={defaultValues?.descontos} />
 
       <div className="flex gap-3 pt-2">
         <button type="submit" className={buttonPrimaryClass}>

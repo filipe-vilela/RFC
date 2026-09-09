@@ -11,6 +11,7 @@ export default async function DashboardPage() {
   const {
     totalPrevistoNoMes,
     totalRecebidoNoMes,
+    totalAReceberNoMes,
     contratosAtivos,
     inadimplentes,
     totalInadimplente,
@@ -30,19 +31,17 @@ export default async function DashboardPage() {
         <p className="text-sm text-brand-grey capitalize">{mesAtual}</p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard
-          label="Recebido no mês"
-          value={formatMoeda(totalRecebidoNoMes)}
-          hint={`de ${formatMoeda(totalPrevistoNoMes)} previstos`}
-        />
-        <StatCard label="Contratos ativos" value={String(contratosAtivos)} />
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+        <StatCard label="Previsto no mês" value={formatMoeda(totalPrevistoNoMes)} />
+        <StatCard label="Recebido no mês" value={formatMoeda(totalRecebidoNoMes)} />
+        <StatCard label="A receber no mês" value={formatMoeda(totalAReceberNoMes)} />
         <StatCard
           label="Inadimplência"
           value={formatMoeda(totalInadimplente)}
           hint={`${inadimplentes.length} recebimento(s) em atraso`}
           tone={inadimplentes.length > 0 ? "warning" : "default"}
         />
+        <StatCard label="Contratos ativos" value={String(contratosAtivos)} />
         <StatCard
           label="Próximos prazos"
           value={String(proximosPrazos.length)}

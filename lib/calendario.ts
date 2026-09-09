@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
-import { diaSemanaIndex } from "@/lib/dias-semana";
-import type { StatusCompromisso, TipoCompromisso } from "@/app/generated/prisma/client";
+import { diaSemanaParaIndex } from "@/lib/dias-semana";
+import type {
+  FrequenciaAtendimento,
+  StatusCompromisso,
+  TipoCompromisso,
+} from "@/app/generated/prisma/client";
 
 export type VisaoCalendario = "mes" | "semana";
 
@@ -69,6 +73,28 @@ export function calcularIntervaloGrade(visao: VisaoCalendario, dataRef: Date) {
   return { inicio, fim };
 }
 
+/** Número de semanas completas entre a semana de `inicio` e a semana de `data`. */
+function semanasEntre(inicio: Date, data: Date): number {
+  const diffMs = inicioSemana(data).getTime() - inicioSemana(inicio).getTime();
+  return Math.round(diffMs / (7 * 86400000));
+}
+
+/** Em que posição (1ª, 2ª, 3ª...) do mês cai o dia informado. */
+function ocorrenciaNoMes(data: Date): number {
+  return Math.ceil(data.getUTCDate() / 7);
+}
+
+function atendimentoOcorreEm(
+  contrato: { dataInicio: Date; frequenciaAtendimento: FrequenciaAtendimento },
+  cursor: Date,
+): boolean {
+  if (contrato.frequenciaAtendimento === "SEMANAL") return true;
+  if (contrato.frequenciaAtendimento === "QUINZENAL") {
+    return semanasEntre(contrato.dataInicio, cursor) % 2 === 0;
+  }
+  return ocorrenciaNoMes(cursor) === ocorrenciaNoMes(contrato.dataInicio);
+}
+
 export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) {
   const { inicio, fim } = calcularIntervaloGrade(visao, dataRef);
 
@@ -84,19 +110,16 @@ export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) 
     }),
   ]);
 
-  const contratosSemDiaReconhecido = contratosAtivos.filter(
-    (c) => diaSemanaIndex(c.diaAtendimento) === null,
-  );
-
   const dias: DiaCalendario[] = [];
   for (let cursor = inicio; cursor < fim; cursor = addDias(cursor, 1)) {
     const diaSemana = cursor.getUTCDay();
     const itens: ItemCalendario[] = [];
 
     for (const contrato of contratosAtivos) {
-      if (diaSemanaIndex(contrato.diaAtendimento) !== diaSemana) continue;
+      if (diaSemanaParaIndex(contrato.diaAtendimento) !== diaSemana) continue;
       if (cursor < inicioDoDiaUTC(contrato.dataInicio)) continue;
       if (contrato.dataFim && cursor > inicioDoDiaUTC(contrato.dataFim)) continue;
+      if (!atendimentoOcorreEm(contrato, cursor)) continue;
       itens.push({
         tipo: "atendimento",
         contratoId: contrato.id,
@@ -120,5 +143,5 @@ export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) 
     dias.push({ data: cursor, itens });
   }
 
-  return { inicio, fim, dias, contratosSemDiaReconhecido };
+  return { inicio, fim, dias };
 }
