@@ -106,6 +106,7 @@ model Contrato {
   recebimentos          Recebimento[]
   compromissos          Compromisso[]
   descontos             Desconto[]
+  atendimentoExcecoes   AtendimentoExcecao[]
 }
 
 model Desconto {
@@ -116,6 +117,23 @@ model Desconto {
   mesInicio  Int
   mesFim     Int
   createdAt  DateTime @default(now())
+}
+
+/**
+ * Uma parcela avulsa de atendimento recorrente movida para outra data (ex.:
+ * remarcação a pedido do cliente), sem alterar o dia/frequência do
+ * contrato. `dataOriginal` é a data em que o atendimento ocorreria pela
+ * regra normal do contrato; `dataNova` é para onde foi movido.
+ */
+model AtendimentoExcecao {
+  id           String   @id @default(cuid())
+  contrato     Contrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+  contratoId   String
+  dataOriginal DateTime
+  dataNova     DateTime
+  createdAt    DateTime @default(now())
+
+  @@unique([contratoId, dataOriginal])
 }
 
 model Recebimento {

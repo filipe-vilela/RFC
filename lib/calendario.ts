@@ -14,6 +14,10 @@ export type ItemCalendario =
       contratoId: string;
       contratoNumero: string;
       clienteNome: string;
+      /** Data-chave usada para identificar essa ocorrência junto ao AtendimentoExcecao (ISO, yyyy-mm-dd). */
+      dataOriginal: string;
+      /** true quando essa ocorrência foi arrastada para uma data diferente da original. */
+      movido: boolean;
     }
   | {
       tipo: "compromisso";
@@ -95,6 +99,10 @@ function atendimentoOcorreEm(
   return ocorrenciaNoMes(cursor) === ocorrenciaNoMes(contrato.dataInicio);
 }
 
+function dataParaChave(data: Date): string {
+  return inicioDoDiaUTC(data).toISOString().slice(0, 10);
+}
+
 export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) {
   const { inicio, fim } = calcularIntervaloGrade(visao, dataRef);
 
@@ -110,7 +118,16 @@ export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) 
     }),
   ]);
 
+  const excecoes = await prisma.atendimentoExcecao.findMany({
+    where: { contratoId: { in: contratosAtivos.map((c) => c.id) } },
+  });
+  const excecoesPorOriginal = new Map(
+    excecoes.map((e) => [`${e.contratoId}-${dataParaChave(e.dataOriginal)}`, e]),
+  );
+  const contratosPorId = new Map(contratosAtivos.map((c) => [c.id, c]));
+
   const dias: DiaCalendario[] = [];
+  const indiceDoDia = new Map<string, number>();
   for (let cursor = inicio; cursor < fim; cursor = addDias(cursor, 1)) {
     const diaSemana = cursor.getUTCDay();
     const itens: ItemCalendario[] = [];
@@ -120,11 +137,15 @@ export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) 
       if (cursor < inicioDoDiaUTC(contrato.dataInicio)) continue;
       if (contrato.dataFim && cursor > inicioDoDiaUTC(contrato.dataFim)) continue;
       if (!atendimentoOcorreEm(contrato, cursor)) continue;
+      // Ocorrência movida para outra data via arrastar-e-soltar: não exibe na data original.
+      if (excecoesPorOriginal.has(`${contrato.id}-${dataParaChave(cursor)}`)) continue;
       itens.push({
         tipo: "atendimento",
         contratoId: contrato.id,
         contratoNumero: contrato.numero,
         clienteNome: contrato.cliente.nome,
+        dataOriginal: dataParaChave(cursor),
+        movido: false,
       });
     }
 
@@ -140,7 +161,24 @@ export async function getDadosCalendario(visao: VisaoCalendario, dataRef: Date) 
       });
     }
 
+    indiceDoDia.set(dataParaChave(cursor), dias.length);
     dias.push({ data: cursor, itens });
+  }
+
+  // Injeta as ocorrências movidas na data nova, se ela estiver visível na grade.
+  for (const excecao of excecoes) {
+    const contrato = contratosPorId.get(excecao.contratoId);
+    if (!contrato) continue;
+    const indice = indiceDoDia.get(dataParaChave(excecao.dataNova));
+    if (indice === undefined) continue;
+    dias[indice].itens.push({
+      tipo: "atendimento",
+      contratoId: contrato.id,
+      contratoNumero: contrato.numero,
+      clienteNome: contrato.cliente.nome,
+      dataOriginal: dataParaChave(excecao.dataOriginal),
+      movido: true,
+    });
   }
 
   return { inicio, fim, dias };

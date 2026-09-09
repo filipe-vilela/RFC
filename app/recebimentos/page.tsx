@@ -86,10 +86,10 @@ export default async function RecebimentosPage({
           <div className="flex gap-2">
             <ConfirmButton
               formAction={marcarSelecionadosComoPago}
-              confirmMessage="Marcar todos os recebimentos selecionados como pagos?"
+              confirmMessage="Marcar todos os recebimentos selecionados como recebidos?"
               className={buttonSecondaryClass}
             >
-              Marcar selecionados como pago
+              Marcar selecionados como recebido
             </ConfirmButton>
             <ConfirmButton
               formAction={excluirSelecionados}
@@ -155,7 +155,7 @@ export default async function RecebimentosPage({
                               formAction={marcarComoPago.bind(null, recebimento.id)}
                               className={buttonSecondaryClass}
                             >
-                              Marcar como pago
+                              Recebido
                             </button>
                           )}
                           <Link

@@ -216,7 +216,7 @@ existente é caso raro e não precisa desse atalho.
 - A listagem de Recebimentos é uma única `<form>` (sem forms aninhados);
   cada linha tem um checkbox `name="ids"`, e os botões de ação usam a prop
   `formAction` do React/Next para chamar Server Actions diferentes dentro
-  do mesmo form (inclusive as ações por linha, como "Marcar como pago" e
+  do mesmo form (inclusive as ações por linha, como "Recebido" e
   "Excluir"). `SelecionarTodos.tsx` e `ConfirmButton.tsx` são os únicos
   client components envolvidos.
 - `Recebimento.dataEmissaoNF` é preenchida automaticamente a partir de
@@ -226,6 +226,36 @@ existente é caso raro e não precisa desse atalho.
   recebimentos previstos ordenados por essa data, com um botão de
   impressão (`window.print()` + variante `print:` do Tailwind escondendo
   nav/filtros/botões).
+
+### Remarcar atendimento arrastando no calendário (`AtendimentoExcecao`)
+
+- Só o atendimento recorrente do contrato é arrastável (o usuário pediu
+  especificamente para poder "arrastar o cliente para outra data" quando
+  ele solicita reagendamento) — os `Compromisso` avulsos da Agenda não têm
+  esse comportamento, continuam somente informativos no calendário.
+- A remarcação **não altera** `Contrato.diaAtendimento`/
+  `frequenciaAtendimento` — é só uma exceção pontual daquela ocorrência,
+  guardada no modelo `AtendimentoExcecao` (`contratoId`, `dataOriginal`,
+  `dataNova`, `@@unique([contratoId, dataOriginal])`, cascade delete pelo
+  Contrato). `getDadosCalendario` (`lib/calendario.ts`) busca as exceções
+  dos contratos ativos visíveis, suprime a ocorrência na `dataOriginal` e
+  injeta um item na `dataNova` (só se ela cair dentro do intervalo visível
+  da grade) marcado com `movido: true` — exibido com um indicador "↷" e
+  contorno laranja.
+- Cada item de atendimento carrega sempre a `dataOriginal` (a data em que
+  ocorreria pela regra normal do contrato), mesmo quando já está exibido
+  numa `dataNova` — é essa chave que identifica a exceção, não a data em
+  que o item está sendo mostrado no momento.
+- `moverAtendimento(contratoId, dataOriginalISO, dataNovaISO)`
+  (`app/calendario/actions.ts`) faz upsert da exceção pela chave composta;
+  se `dataNova` for igual à `dataOriginal`, remove a exceção em vez de
+  criar (volta a ocorrer na data normal).
+- A grade do calendário foi extraída para `app/calendario/CalendarioGrid.tsx`
+  (client component) para poder usar drag-and-drop nativo do HTML5
+  (`draggable`, `onDragStart`/`onDragOver`/`onDrop`); ao soltar, chama a
+  Server Action diretamente (sem `<form>`) e usa `router.refresh()` para
+  atualizar a grade. `app/calendario/page.tsx` continua responsável só
+  pela busca de dados e pela navegação (mês/semana, anterior/próximo).
 
 ## Como conduzir o desenvolvimento
 
@@ -269,6 +299,14 @@ existente é caso raro e não precisa desse atalho.
       component com `usePathname`); título de aba por página
       (`metadata.title` + template em `app/layout.tsx`); página 404
       personalizada (`app/not-found.tsx`)
+- [x] Botão "Marcar como pago" renomeado para "Recebido" (listagem de
+      Recebimentos)
+- [x] Calendário: arrastar e soltar um atendimento para outra data
+      (remarcação avulsa a pedido do cliente), sem alterar o dia/frequência
+      do contrato — modelo `AtendimentoExcecao`, Server Action
+      `moverAtendimento`, grade extraída para `app/calendario/CalendarioGrid.tsx`
+      (client component); ver "Remarcar atendimento arrastando no
+      calendário"
 
 ## Comandos úteis
 
