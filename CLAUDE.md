@@ -7,10 +7,15 @@ atendimento, com uma visão financeira consolidada.
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) — frontend e backend no mesmo projeto
-- **SQLite** + **Prisma ORM 7** — banco em arquivo único (`dev.db`), fácil de
-  migrar para Postgres depois
+- **Postgres** + **Prisma ORM 7** — hospedado (Neon/Supabase/Vercel Storage),
+  para poder rodar no Vercel e ser acessado pelos sócios (ver "Deploy no
+  Vercel"). Rodou em SQLite local até esse ponto; migrado para Postgres
+  porque Vercel é serverless e não tem disco persistente entre requisições
+  — um arquivo `dev.db` local não sobrevive nesse ambiente.
 - **Tailwind CSS 4**
-- Sem autenticação por enquanto (uso interno)
+- **Autenticação por senha única compartilhada** (não é multiusuário/CRM —
+  ver "Autenticação"), suficiente pra restringir o acesso aos sócios sem
+  precisar de cadastro de usuário
 
 ## Identidade visual
 
@@ -49,15 +54,17 @@ Tailwind em `app/globals.css` (`@theme inline`):
 ## Decisões e pontos de atenção específicos desta stack
 
 - **Prisma 7 exige driver adapter explícito** (não há mais engine binário
-  implícito). Usamos `@prisma/adapter-better-sqlite3`. O client é
-  instanciado uma única vez em `lib/prisma.ts` (padrão singleton em dev,
-  para não esgotar conexões com hot-reload).
+  implícito). Usamos `@prisma/adapter-pg` (Postgres puro via `pg`, funciona
+  com qualquer provedor — Neon, Supabase, etc. — que dê uma connection
+  string padrão). O client é instanciado uma única vez em `lib/prisma.ts`
+  (padrão singleton em dev, para não esgotar conexões com hot-reload).
 - O client gerado do Prisma vai para `app/generated/prisma` (gitignored).
   Rodar `npx prisma generate` sempre que o `schema.prisma` mudar.
 - Config do Prisma fica em `prisma7.config.ts` (não em `package.json`).
   O comando de seed está declarado lá em `migrations.seed`.
-- `.env` (com `DATABASE_URL="file:./dev.db"`) e `dev.db` **não são
-  versionados** (ver `.gitignore`).
+- `.env` (com `DATABASE_URL`, a connection string do Postgres) **não é
+  versionado** (ver `.gitignore`). No Vercel isso vira variável de
+  ambiente do projeto, não arquivo.
 - Next.js 16 trouxe breaking changes relevantes de versões anteriores
   (`middleware` → `proxy`, mudanças em `revalidateTag`, etc. — ver
   `node_modules/next/dist/docs/01-app/02-guides/upgrading/version-16.md`).
@@ -123,7 +130,9 @@ Incluído:
    a emitir por mês, com impressão
 
 Fora do escopo (não implementar sem pedido explícito): emissão de nota
-fiscal, CRM completo, autenticação/multiusuário.
+fiscal, CRM completo, contas de usuário individuais (login por sócio,
+permissões por papel — a autenticação atual é uma senha única
+compartilhada, ver "Autenticação", não multiusuário de verdade).
 
 ### Cadastro combinado de cliente novo no formulário de contrato
 
@@ -290,6 +299,59 @@ existente é caso raro e não precisa desse atalho.
   atualizar a grade. `app/calendario/page.tsx` continua responsável só
   pela busca de dados e pela navegação (mês/semana, anterior/próximo).
 
+### Autenticação (`lib/auth.ts`, `proxy.ts`, `app/login`)
+
+- Senha única compartilhada entre os sócios — não é login por usuário,
+  não tem cadastro, não tem papéis/permissões. Pedido explícito do
+  usuário ao decidir colocar o sistema no Vercel (link público) com dados
+  sensíveis de clientes/faturamento.
+- `proxy.ts` na raiz do projeto (arquivo de proxy do Next 16, substitui o
+  antigo `middleware.ts`) intercepta toda requisição exceto `/login` e os
+  assets estáticos, e redireciona pra `/login` se o cookie de sessão
+  (`rfc_session`) não for válido.
+- O "cookie de sessão" não guarda usuário nem expiração server-side: é um
+  HMAC-SHA256 fixo (`AUTH_COOKIE_SECRET` + uma string constante), gerado
+  em `tokenSessaoEsperado()` (`lib/auth.ts`) e comparado com
+  `timingSafeEqual`. Ter o cookie certo prova só que a pessoa digitou a
+  senha certa uma vez — suficiente pro caso de uso (sócios, sem troca de
+  senha por pessoa). O cookie é `httpOnly` e dura 30 dias
+  (`app/login/actions.ts`).
+- `senhaCorreta()` compara a senha digitada com `APP_PASSWORD` (variável
+  de ambiente), também via `timingSafeEqual`.
+- **Variáveis obrigatórias em produção**: `APP_PASSWORD` (a senha que os
+  sócios vão digitar) e `AUTH_COOKIE_SECRET` (qualquer string aleatória
+  longa, não precisa ser memorizável — só assina o cookie). Trocar os
+  dois no Vercel antes de divulgar o link; os valores em `.env` são só
+  para desenvolvimento local.
+
+## Deploy no Vercel
+
+- O sistema já foi tentado no Vercel antes com SQLite e não funcionou:
+  Vercel é serverless, sem disco persistente entre requisições, então um
+  arquivo `dev.db` local não sobrevive lá. Por isso a migração para
+  Postgres (`@prisma/adapter-pg`) — ver "Stack" e "Decisões e pontos de
+  atenção".
+- Passo a passo pra colocar no ar:
+  1. Criar um banco Postgres gerenciado — pela aba **Storage** do próprio
+     painel do Vercel (integra com Neon ou Supabase) ou direto no site da
+     Neon/Supabase. Copiar a connection string (`postgresql://...`).
+  2. Importar o repositório no Vercel (New Project → selecionar o repo do
+     GitHub).
+  3. Nas variáveis de ambiente do projeto (Settings → Environment
+     Variables), definir `DATABASE_URL` (a connection string do passo 1),
+     `APP_PASSWORD` e `AUTH_COOKIE_SECRET` (ver "Autenticação").
+  4. Antes do primeiro deploy funcionar de verdade, rodar as migrations
+     contra esse banco (`npx prisma migrate deploy`, localmente, com
+     `DATABASE_URL` apontando pro banco de produção) — o build do Vercel
+     não roda migration automaticamente.
+  5. Fazer o deploy (push pro branch conectado, ou "Deploy" no painel).
+  6. Compartilhar o link com os sócios + a senha (`APP_PASSWORD`) por um
+     canal separado (não no mesmo lugar que o link).
+- Os sócios não precisam de conta no Vercel nem acesso ao projeto lá —
+  só precisam do link e da senha. Acesso ao painel do Vercel (pra ver
+  logs, variáveis de ambiente, etc.) é outra permissão, dada convidando o
+  e-mail deles em Project Settings → Members, se for o caso.
+
 ## Como conduzir o desenvolvimento
 
 - Seguir o roteiro acima **um passo por vez**, sem pular etapas
@@ -349,13 +411,18 @@ existente é caso raro e não precisa desse atalho.
       `app/layout.tsx`) — header passou de navy para branco pra dar
       contraste ao logo colorido; `NavLinks.tsx` ajustado pras novas cores
       — ver "Identidade visual"
+- [x] Migração de SQLite para Postgres (`@prisma/adapter-pg`) e
+      autenticação por senha única compartilhada (`lib/auth.ts`,
+      `proxy.ts`, `app/login`), pra poder colocar o sistema no Vercel e
+      os sócios acessarem — ver "Deploy no Vercel" e "Autenticação"
 
 ## Comandos úteis
 
 ```bash
-npm run dev              # servidor de desenvolvimento
+npm run dev               # servidor de desenvolvimento
 npm run build             # build de produção (usar para validar cada etapa)
-npx prisma migrate dev    # aplicar mudanças de schema
+npx prisma migrate dev    # aplicar mudanças de schema (local)
+npx prisma migrate deploy # aplicar migrations pendentes em produção (Vercel)
 npx prisma generate       # regenerar o client após mudar o schema
 npx prisma db seed        # popular o banco com dados de teste
 ```

@@ -20,6 +20,8 @@ function isAtivo(pathname: string, href: string): boolean {
 export function NavLinks() {
   const pathname = usePathname();
 
+  if (pathname === "/login") return null;
+
   return (
     <nav className="flex flex-wrap gap-x-5 gap-y-1">
       {NAV_LINKS.map((link) => {
