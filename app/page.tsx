@@ -3,7 +3,7 @@ import { getDashboardData } from "@/lib/dashboard";
 import { StatCard } from "@/app/components/StatCard";
 import { TIPO_COMPROMISSO } from "@/lib/enums";
 import { formatData, formatMoeda } from "@/lib/format";
-import { linkClass } from "@/lib/ui";
+import { inputClass, labelClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
 import { paramString } from "@/lib/query-params";
 
 export const dynamic = "force-dynamic";
@@ -24,6 +24,22 @@ function capitalizar(texto: string): string {
   return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
+/** Lista de meses pra seleção no filtro: de 12 meses atrás até 12 meses à frente de hoje. */
+function opcoesDeMes(): { value: string; label: string }[] {
+  const hoje = inicioMesUTC(new Date());
+  const opcoes = [];
+  for (let i = -12; i <= 12; i++) {
+    const data = addMeses(hoje, i);
+    opcoes.push({
+      value: formatMesParam(data),
+      label: capitalizar(
+        data.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }),
+      ),
+    });
+  }
+  return opcoes;
+}
+
 export default async function DashboardPage({
   searchParams,
 }: PageProps<"/">) {
@@ -33,8 +49,6 @@ export default async function DashboardPage({
     mesParam && !Number.isNaN(Date.parse(`${mesParam}-01`))
       ? inicioMesUTC(new Date(`${mesParam}-01`))
       : inicioMesUTC(new Date());
-  const proximoMes = addMeses(mesRef, 1);
-  const mesAnterior = addMeses(mesRef, -1);
 
   const {
     totalPrevistoNoMes,
@@ -46,28 +60,35 @@ export default async function DashboardPage({
     proximosPrazos,
   } = await getDashboardData(mesRef);
 
-  const mesLabel = capitalizar(
-    mesRef.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }),
-  );
-
   return (
     <div className="space-y-8">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-brand-grey">{mesLabel}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Link href={`/?mes=${formatMesParam(mesAnterior)}`} className={linkClass}>
-            ← Mês anterior
-          </Link>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h1 className="text-2xl font-semibold">Dashboard</h1>
+        <form method="GET" action="/" className="flex items-end gap-2">
+          <div>
+            <label className={labelClass} htmlFor="mes">
+              Mês
+            </label>
+            <select
+              id="mes"
+              name="mes"
+              defaultValue={formatMesParam(mesRef)}
+              className={inputClass}
+            >
+              {opcoesDeMes().map((opcao) => (
+                <option key={opcao.value} value={opcao.value}>
+                  {opcao.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button type="submit" className={buttonSecondaryClass}>
+            Ver
+          </button>
           <Link href="/" className={linkClass}>
             Hoje
           </Link>
-          <Link href={`/?mes=${formatMesParam(proximoMes)}`} className={linkClass}>
-            Próximo mês →
-          </Link>
-        </div>
+        </form>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
