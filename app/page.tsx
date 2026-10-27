@@ -8,35 +8,30 @@ import { paramString } from "@/lib/query-params";
 
 export const dynamic = "force-dynamic";
 
+const MESES_LABELS = [
+  "Janeiro",
+  "Fevereiro",
+  "Março",
+  "Abril",
+  "Maio",
+  "Junho",
+  "Julho",
+  "Agosto",
+  "Setembro",
+  "Outubro",
+  "Novembro",
+  "Dezembro",
+];
+
 function inicioMesUTC(data: Date): Date {
   return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), 1));
 }
 
-function addMeses(data: Date, meses: number): Date {
-  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth() + meses, 1));
-}
-
-function formatMesParam(data: Date): string {
-  return data.toISOString().slice(0, 7);
-}
-
-function capitalizar(texto: string): string {
-  return texto.charAt(0).toUpperCase() + texto.slice(1);
-}
-
-/** Lista de meses pra seleção no filtro: de 12 meses atrás até 12 meses à frente de hoje. */
-function opcoesDeMes(): { value: string; label: string }[] {
-  const hoje = inicioMesUTC(new Date());
+/** Anos pra seleção no filtro: de 3 anos atrás até 3 anos à frente do ano atual. */
+function opcoesDeAno(): number[] {
+  const anoAtual = new Date().getUTCFullYear();
   const opcoes = [];
-  for (let i = -12; i <= 12; i++) {
-    const data = addMeses(hoje, i);
-    opcoes.push({
-      value: formatMesParam(data),
-      label: capitalizar(
-        data.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }),
-      ),
-    });
-  }
+  for (let i = -3; i <= 3; i++) opcoes.push(anoAtual + i);
   return opcoes;
 }
 
@@ -44,11 +39,16 @@ export default async function DashboardPage({
   searchParams,
 }: PageProps<"/">) {
   const params = await searchParams;
-  const mesParam = paramString(params.mes);
+  const hoje = inicioMesUTC(new Date());
+
+  const mesParam = Number(paramString(params.mes));
+  const anoParam = Number(paramString(params.ano));
+  const mesValido = mesParam >= 1 && mesParam <= 12;
+  const anoValido = anoParam >= 2000 && anoParam <= 2100;
   const mesRef =
-    mesParam && !Number.isNaN(Date.parse(`${mesParam}-01`))
-      ? inicioMesUTC(new Date(`${mesParam}-01`))
-      : inicioMesUTC(new Date());
+    mesValido && anoValido
+      ? new Date(Date.UTC(anoParam, mesParam - 1, 1))
+      : hoje;
 
   const {
     totalPrevistoNoMes,
@@ -72,12 +72,29 @@ export default async function DashboardPage({
             <select
               id="mes"
               name="mes"
-              defaultValue={formatMesParam(mesRef)}
+              defaultValue={mesRef.getUTCMonth() + 1}
               className={inputClass}
             >
-              {opcoesDeMes().map((opcao) => (
-                <option key={opcao.value} value={opcao.value}>
-                  {opcao.label}
+              {MESES_LABELS.map((label, i) => (
+                <option key={label} value={i + 1}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className={labelClass} htmlFor="ano">
+              Ano
+            </label>
+            <select
+              id="ano"
+              name="ano"
+              defaultValue={mesRef.getUTCFullYear()}
+              className={inputClass}
+            >
+              {opcoesDeAno().map((ano) => (
+                <option key={ano} value={ano}>
+                  {ano}
                 </option>
               ))}
             </select>

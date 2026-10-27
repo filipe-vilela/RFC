@@ -364,14 +364,17 @@ existente é caso raro e não precisa desse atalho.
 
 - `getDashboardData(mesRef)` (`lib/dashboard.ts`) aceita o mês de
   referência pros três cards que são "do mês" (previsto/recebido/a
-  receber) — `app/page.tsx` lê `?mes=AAAA-MM` da URL.
-- A navegação é um `<select>` de mês/ano (gerado por `opcoesDeMes()`, uma
-  janela fixa de 12 meses antes até 12 meses depois de hoje) dentro de um
-  `<form method="GET">`, no mesmo padrão de filtro usado em `FilterBar` —
-  pedido explícito do usuário em vez de setas "anterior/próximo" (eram o
-  design original, mas ele achou mais rápido pular direto pro mês
-  desejado que clicar várias vezes). Link "Hoje" ao lado continua um
-  atalho rápido pro mês atual.
+  receber) — `app/page.tsx` lê `?mes=M&ano=AAAA` da URL (mês 1-12, ano
+  numérico — dois campos separados, não um único `AAAA-MM`).
+- A navegação é dois `<select>` (Mês com os 12 nomes fixos em
+  `MESES_LABELS`, Ano numa janela de 3 anos antes até 3 anos depois do
+  ano atual) dentro de um `<form method="GET">`, no mesmo padrão de
+  filtro usado em `FilterBar`. Passou por duas iterações a pedido do
+  usuário: primeiro setas "anterior/próximo", depois um único `<select>`
+  combinando mês+ano, até chegar nos dois campos separados (mais rápido
+  pra pular direto pro mês/ano desejado sem rolar uma lista longa de
+  combinações). Link "Hoje" ao lado continua um atalho rápido pro mês
+  atual.
 - **Inadimplência e Próximos prazos continuam ancorados em hoje**,
   independente do mês navegado — não faz sentido "atrasado" ou "próximo
   compromisso" mudar de significado só porque o usuário foi ver a
