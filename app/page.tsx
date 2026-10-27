@@ -4,10 +4,38 @@ import { StatCard } from "@/app/components/StatCard";
 import { TIPO_COMPROMISSO } from "@/lib/enums";
 import { formatData, formatMoeda } from "@/lib/format";
 import { linkClass } from "@/lib/ui";
+import { paramString } from "@/lib/query-params";
 
 export const dynamic = "force-dynamic";
 
-export default async function DashboardPage() {
+function inicioMesUTC(data: Date): Date {
+  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), 1));
+}
+
+function addMeses(data: Date, meses: number): Date {
+  return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth() + meses, 1));
+}
+
+function formatMesParam(data: Date): string {
+  return data.toISOString().slice(0, 7);
+}
+
+function capitalizar(texto: string): string {
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: PageProps<"/">) {
+  const params = await searchParams;
+  const mesParam = paramString(params.mes);
+  const mesRef =
+    mesParam && !Number.isNaN(Date.parse(`${mesParam}-01`))
+      ? inicioMesUTC(new Date(`${mesParam}-01`))
+      : inicioMesUTC(new Date());
+  const proximoMes = addMeses(mesRef, 1);
+  const mesAnterior = addMeses(mesRef, -1);
+
   const {
     totalPrevistoNoMes,
     totalRecebidoNoMes,
@@ -16,19 +44,30 @@ export default async function DashboardPage() {
     inadimplentes,
     totalInadimplente,
     proximosPrazos,
-  } = await getDashboardData();
+  } = await getDashboardData(mesRef);
 
-  const mesAtual = new Date().toLocaleDateString("pt-BR", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
+  const mesLabel = capitalizar(
+    mesRef.toLocaleDateString("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" }),
+  );
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold">Dashboard</h1>
-        <p className="text-sm text-brand-grey capitalize">{mesAtual}</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-brand-grey">{mesLabel}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link href={`/?mes=${formatMesParam(mesAnterior)}`} className={linkClass}>
+            ← Mês anterior
+          </Link>
+          <Link href="/" className={linkClass}>
+            Hoje
+          </Link>
+          <Link href={`/?mes=${formatMesParam(proximoMes)}`} className={linkClass}>
+            Próximo mês →
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">

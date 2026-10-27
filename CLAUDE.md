@@ -351,10 +351,28 @@ existente é caso raro e não precisa desse atalho.
 - `next.config.ts` tem `experimental.serverActions.bodySizeLimit: "10mb"`
   — o limite padrão do Next (1MB) é pequeno demais pra um PDF de contrato
   assinado digitalizado.
-- **Variável obrigatória em produção**: `BLOB_READ_WRITE_TOKEN` — criada
-  automaticamente ao conectar um Vercel Blob Store ao projeto (Storage →
-  Create Database → Blob), igual ao fluxo do banco Postgres. Sem essa
-  variável, tentar anexar um arquivo derruba a Server Action com erro.
+- **Variável obrigatória em produção**: `BLOB_READ_WRITE_TOKEN`. O fluxo
+  atual de criar um Blob Store pelo painel do Vercel conecta por OIDC
+  (gera só `BLOB_STORE_ID` + `BLOB_WEBHOOK_PUBLIC_KEY` automaticamente,
+  sem token estático) — isso pode funcionar sozinho em produção, mas pra
+  não depender de OIDC Federation estar habilitado no projeto, pegamos o
+  token manualmente na aba do Blob Store (".env.local") e adicionamos
+  como variável de ambiente à parte. Sem isso, tentar anexar um arquivo
+  derruba a Server Action com erro.
+
+### Navegação de mês no Dashboard
+
+- `getDashboardData(mesRef)` (`lib/dashboard.ts`) aceita o mês de
+  referência pros três cards que são "do mês" (previsto/recebido/a
+  receber) — `app/page.tsx` lê `?mes=AAAA-MM` da URL, no mesmo padrão
+  (`inicioMesUTC`/`addMeses`/`formatMesParam`) já usado em
+  `/recebimentos/notas-fiscais`, com os mesmos links "← Mês anterior /
+  Hoje / Próximo mês →".
+- **Inadimplência e Próximos prazos continuam ancorados em hoje**,
+  independente do mês navegado — não faz sentido "atrasado" ou "próximo
+  compromisso" mudar de significado só porque o usuário foi ver a
+  previsão do mês seguinte. Por isso `hoje` em `getDashboardData` é
+  sempre `new Date()`, só `inicioMes`/`inicioProximoMes` usam `mesRef`.
 
 ## Deploy no Vercel
 
@@ -466,6 +484,9 @@ existente é caso raro e não precisa desse atalho.
       calendário (`<Link>` pra `/agenda/[id]/editar`) — ver "Anexo do
       contrato assinado em PDF" e "Remarcar atendimento arrastando no
       calendário"
+- [x] Navegação de mês no Dashboard (anterior/hoje/próximo), igual ao
+      padrão da relação de notas fiscais — ver "Navegação de mês no
+      Dashboard"
 
 ## Comandos úteis
 

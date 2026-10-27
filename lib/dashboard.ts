@@ -4,11 +4,10 @@ function inicioDoDiaUTC(data: Date): Date {
   return new Date(Date.UTC(data.getUTCFullYear(), data.getUTCMonth(), data.getUTCDate()));
 }
 
-export async function getDashboardData() {
-  const agora = new Date();
-  const hoje = inicioDoDiaUTC(agora);
-  const inicioMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth(), 1));
-  const inicioProximoMes = new Date(Date.UTC(agora.getUTCFullYear(), agora.getUTCMonth() + 1, 1));
+export async function getDashboardData(mesRef: Date = new Date()) {
+  const hoje = inicioDoDiaUTC(new Date());
+  const inicioMes = new Date(Date.UTC(mesRef.getUTCFullYear(), mesRef.getUTCMonth(), 1));
+  const inicioProximoMes = new Date(Date.UTC(mesRef.getUTCFullYear(), mesRef.getUTCMonth() + 1, 1));
 
   const [recebimentosDoMes, contratosAtivos, inadimplentes, proximosPrazos] =
     await Promise.all([
