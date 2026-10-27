@@ -105,6 +105,8 @@ model Contrato {
   diaAtendimento        DiaSemana?
   frequenciaAtendimento FrequenciaAtendimento @default(SEMANAL)
   renovadoAte           DateTime?
+  arquivoContratoUrl    String?
+  arquivoContratoNome   String?
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { moverAtendimento } from "./actions";
 import { DIAS_SEMANA_LABELS } from "@/lib/dias-semana";
@@ -133,15 +134,19 @@ export function CalendarioGrid({
                           {item.movido && <span className="ml-1">↷</span>}
                         </div>
                       ) : (
-                        <div
+                        <Link
                           key={`c-${idx}`}
-                          className={"truncate rounded px-1.5 py-0.5 " + itemBadgeClass(item.status)}
+                          href={`/agenda/${item.compromissoId}/editar`}
+                          className={
+                            "block truncate rounded px-1.5 py-0.5 hover:opacity-80 " +
+                            itemBadgeClass(item.status)
+                          }
                           title={`${TIPO_COMPROMISSO[item.tipoCompromisso]} — ${item.titulo}${
                             item.clienteNome ? ` (${item.clienteNome})` : ""
-                          } — ${STATUS_COMPROMISSO[item.status]}`}
+                          } — ${STATUS_COMPROMISSO[item.status]}. Clique para ver o compromisso.`}
                         >
                           {item.titulo}
-                        </div>
+                        </Link>
                       ),
                     )}
                   </div>

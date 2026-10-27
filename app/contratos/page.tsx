@@ -115,6 +115,16 @@ export default async function ContratosPage({
                           </button>
                         </form>
                       )}
+                      {contrato.arquivoContratoUrl && (
+                        <a
+                          href={contrato.arquivoContratoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={linkClass}
+                        >
+                          PDF
+                        </a>
+                      )}
                       <Link
                         href={`/contratos/${contrato.id}/editar`}
                         className={linkClass}

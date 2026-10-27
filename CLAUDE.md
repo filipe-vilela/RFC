@@ -91,7 +91,9 @@ Tailwind em `app/globals.css` (`@theme inline`):
   data início/fim, status (ativo/encerrado/suspenso), `diaAtendimento`
   (enum `DiaSemana`, selecionado — não é mais texto livre),
   `frequenciaAtendimento` (semanal/quinzenal/mensal), `renovadoAte`
-  (ver "Renovação de contrato")
+  (ver "Renovação de contrato"), `arquivoContratoUrl`/`arquivoContratoNome`
+  (PDF do contrato assinado, opcional — ver "Anexo do contrato assinado
+  em PDF")
 - **Desconto** — vinculado a um Contrato; `tipo` (percentual ou valor
   fixo em R$), `percentual`/`valorFixo` (só um dos dois é usado, conforme
   `tipo`), `mesInicio`, `mesFim` (mês corrido desde o início do contrato)
@@ -298,6 +300,13 @@ existente é caso raro e não precisa desse atalho.
   Server Action diretamente (sem `<form>`) e usa `router.refresh()` para
   atualizar a grade. `app/calendario/page.tsx` continua responsável só
   pela busca de dados e pela navegação (mês/semana, anterior/próximo).
+- Os itens de `Compromisso` na grade são um `<Link>` pra
+  `/agenda/[id]/editar` (mesma página de edição da Agenda, que já serve
+  como tela de visualização — não existe uma tela só-leitura separada em
+  nenhuma entidade do sistema). Só os compromissos são clicáveis assim;
+  os itens de atendimento continuam sendo arrastáveis, não links, já que
+  "ver o atendimento" não faz sentido (ele não é um registro próprio, é
+  calculado a partir do contrato).
 
 ### Autenticação (`lib/auth.ts`, `proxy.ts`, `app/login`)
 
@@ -324,6 +333,29 @@ existente é caso raro e não precisa desse atalho.
   dois no Vercel antes de divulgar o link; os valores em `.env` são só
   para desenvolvimento local.
 
+### Anexo do contrato assinado em PDF (`Contrato.arquivoContratoUrl`)
+
+- Upload feito pro **Vercel Blob** (`@vercel/blob`, `put()`/`del()` em
+  `app/contratos/actions.ts`), não pro disco do servidor — igual ao
+  motivo de termos migrado o banco pra Postgres, o Vercel é serverless e
+  não tem disco persistente entre requisições.
+- `Contrato.arquivoContratoUrl` (a URL pública do blob) e
+  `Contrato.arquivoContratoNome` (nome original do arquivo, só pra
+  exibição) são ambos opcionais. `ContratoForm.tsx` mostra um link "Ver
+  arquivo atual" quando já existe um, um `<input type="file"
+  accept="application/pdf">` pra enviar/substituir, e (só na edição) um
+  checkbox "Remover o arquivo atual" pra tirar o anexo sem subir outro.
+- Trocar ou remover o anexo apaga o blob antigo do Vercel Blob
+  (`removerArquivoAntigo`, melhor esforço — erro de exclusão não derruba
+  a ação principal). Excluir o contrato também apaga o blob associado.
+- `next.config.ts` tem `experimental.serverActions.bodySizeLimit: "10mb"`
+  — o limite padrão do Next (1MB) é pequeno demais pra um PDF de contrato
+  assinado digitalizado.
+- **Variável obrigatória em produção**: `BLOB_READ_WRITE_TOKEN` — criada
+  automaticamente ao conectar um Vercel Blob Store ao projeto (Storage →
+  Create Database → Blob), igual ao fluxo do banco Postgres. Sem essa
+  variável, tentar anexar um arquivo derruba a Server Action com erro.
+
 ## Deploy no Vercel
 
 - O sistema já foi tentado no Vercel antes com SQLite e não funcionou:
@@ -340,13 +372,24 @@ existente é caso raro e não precisa desse atalho.
   3. Nas variáveis de ambiente do projeto (Settings → Environment
      Variables), definir `DATABASE_URL` (a connection string do passo 1),
      `APP_PASSWORD` e `AUTH_COOKIE_SECRET` (ver "Autenticação").
-  4. Antes do primeiro deploy funcionar de verdade, rodar as migrations
+  4. Criar um Vercel Blob Store (Storage → Create Database → **Blob**) e
+     conectar ao projeto — isso cria sozinho a variável
+     `BLOB_READ_WRITE_TOKEN`, necessária pro anexo de PDF do contrato (ver
+     "Anexo do contrato assinado em PDF").
+  5. Antes do primeiro deploy funcionar de verdade, rodar as migrations
      contra esse banco (`npx prisma migrate deploy`, localmente, com
      `DATABASE_URL` apontando pro banco de produção) — o build do Vercel
      não roda migration automaticamente.
-  5. Fazer o deploy (push pro branch conectado, ou "Deploy" no painel).
-  6. Compartilhar o link com os sócios + a senha (`APP_PASSWORD`) por um
+  6. Fazer o deploy (push pro branch conectado, ou "Deploy" no painel).
+  7. Compartilhar o link com os sócios + a senha (`APP_PASSWORD`) por um
      canal separado (não no mesmo lugar que o link).
+- **`package.json` tem um script `postinstall: "prisma generate"`** — sem
+  isso o build do Vercel falha com `Module not found:
+  @/app/generated/prisma/client`, porque o cliente gerado do Prisma é
+  gitignored (ver "Decisões e pontos de atenção") e o Vercel só roda
+  `npm install` + `npm run build`, nunca gera o client sozinho a menos que
+  um `postinstall` mande (bug real de uma tentativa de deploy, já
+  corrigido — não remover esse script).
 - Os sócios não precisam de conta no Vercel nem acesso ao projeto lá —
   só precisam do link e da senha. Acesso ao painel do Vercel (pra ver
   logs, variáveis de ambiente, etc.) é outra permissão, dada convidando o
@@ -415,6 +458,14 @@ existente é caso raro e não precisa desse atalho.
       autenticação por senha única compartilhada (`lib/auth.ts`,
       `proxy.ts`, `app/login`), pra poder colocar o sistema no Vercel e
       os sócios acessarem — ver "Deploy no Vercel" e "Autenticação"
+- [x] Primeiro deploy real no Vercel (projeto `gestaorfc`, banco Neon) —
+      corrigido `postinstall` faltando (client do Prisma não gerado no
+      build) e lockfile desatualizado
+- [x] Anexo de PDF do contrato assinado (Vercel Blob,
+      `Contrato.arquivoContratoUrl`) e compromissos clicáveis no
+      calendário (`<Link>` pra `/agenda/[id]/editar`) — ver "Anexo do
+      contrato assinado em PDF" e "Remarcar atendimento arrastando no
+      calendário"
 
 ## Comandos úteis
 

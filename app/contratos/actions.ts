@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { put, del } from "@vercel/blob";
 import { prisma } from "@/lib/prisma";
 import { isForeignKeyConstraintError } from "@/lib/db-errors";
 import { sincronizarRecebimentosAutomaticos } from "@/lib/recebimentos";
@@ -11,6 +12,25 @@ import type {
   Periodicidade,
   StatusContrato,
 } from "@/app/generated/prisma/client";
+
+/** Envia o PDF do contrato assinado pro Vercel Blob, se um arquivo foi selecionado. */
+async function enviarArquivoContrato(
+  formData: FormData,
+): Promise<{ url: string; nome: string } | null> {
+  const arquivo = formData.get("arquivoContrato");
+  if (!(arquivo instanceof File) || arquivo.size === 0) return null;
+
+  const blob = await put(`contratos/${crypto.randomUUID()}-${arquivo.name}`, arquivo, {
+    access: "public",
+  });
+  return { url: blob.url, nome: arquivo.name };
+}
+
+/** Remove um blob antigo do Vercel Blob; falha silenciosamente (não deve travar a ação principal). */
+async function removerArquivoAntigo(url: string | null | undefined) {
+  if (!url) return;
+  await del(url).catch(() => {});
+}
 
 function readContratoFormData(formData: FormData) {
   const dataFimRaw = String(formData.get("dataFim") ?? "").trim();
@@ -66,6 +86,7 @@ export async function createContrato(formData: FormData) {
   const data = readContratoFormData(formData);
   const clienteModo = String(formData.get("clienteModo") ?? "existente");
   const descontos = readDescontosFormData(formData);
+  const arquivo = await enviarArquivoContrato(formData);
 
   await prisma.$transaction(async (tx) => {
     const cliente =
@@ -76,7 +97,13 @@ export async function createContrato(formData: FormData) {
           });
 
     const contrato = await tx.contrato.create({
-      data: { ...data, clienteId: cliente.id, descontos: { create: descontos } },
+      data: {
+        ...data,
+        clienteId: cliente.id,
+        descontos: { create: descontos },
+        arquivoContratoUrl: arquivo?.url,
+        arquivoContratoNome: arquivo?.nome,
+      },
     });
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
       ...contrato,
@@ -95,13 +122,29 @@ export async function updateContrato(id: string, formData: FormData) {
   const data = readContratoFormData(formData);
   const clienteId = String(formData.get("clienteId") ?? "");
   const descontos = readDescontosFormData(formData);
+  const removerArquivo = formData.get("removerArquivoContrato") === "on";
+  const novoArquivo = await enviarArquivoContrato(formData);
+
+  const existente = await prisma.contrato.findUniqueOrThrow({
+    where: { id },
+    select: { arquivoContratoUrl: true },
+  });
 
   await prisma.$transaction(async (tx) => {
     const cliente = await tx.cliente.findUniqueOrThrow({ where: { id: clienteId } });
     await tx.desconto.deleteMany({ where: { contratoId: id } });
     const contrato = await tx.contrato.update({
       where: { id },
-      data: { ...data, clienteId, descontos: { create: descontos } },
+      data: {
+        ...data,
+        clienteId,
+        descontos: { create: descontos },
+        ...(novoArquivo
+          ? { arquivoContratoUrl: novoArquivo.url, arquivoContratoNome: novoArquivo.nome }
+          : removerArquivo
+            ? { arquivoContratoUrl: null, arquivoContratoNome: null }
+            : {}),
+      },
     });
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
       ...contrato,
@@ -109,14 +152,20 @@ export async function updateContrato(id: string, formData: FormData) {
       diaVencimentoCliente: cliente.diaVencimento,
     });
   });
+
+  if (novoArquivo || removerArquivo) {
+    await removerArquivoAntigo(existente.arquivoContratoUrl);
+  }
+
   revalidatePath("/contratos");
   revalidatePath("/recebimentos");
   redirect("/contratos");
 }
 
 export async function deleteContrato(id: string) {
+  let contrato;
   try {
-    await prisma.contrato.delete({ where: { id } });
+    contrato = await prisma.contrato.delete({ where: { id } });
   } catch (error) {
     if (isForeignKeyConstraintError(error)) {
       redirect(
@@ -128,6 +177,7 @@ export async function deleteContrato(id: string) {
     }
     throw error;
   }
+  await removerArquivoAntigo(contrato.arquivoContratoUrl);
   revalidatePath("/contratos");
 }
 

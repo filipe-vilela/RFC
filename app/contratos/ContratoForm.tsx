@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { inputClass, labelClass, buttonPrimaryClass, buttonSecondaryClass } from "@/lib/ui";
+import { inputClass, labelClass, buttonPrimaryClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
 import { FREQUENCIA_ATENDIMENTO, PERIODICIDADE, STATUS_CONTRATO } from "@/lib/enums";
 import { formatDataInput } from "@/lib/format";
 import { DIAS_SEMANA_LABELS } from "@/lib/dias-semana";
@@ -17,6 +17,8 @@ type ContratoDefaultValues = {
   status: string;
   diaAtendimento: string | null;
   frequenciaAtendimento: string;
+  arquivoContratoUrl?: string | null;
+  arquivoContratoNome?: string | null;
   descontos?: {
     tipo: string;
     percentual: number | null;
@@ -222,6 +224,38 @@ export function ContratoForm({
       </div>
 
       <DescontosCampo defaultValue={defaultValues?.descontos} />
+
+      <div>
+        <label className={labelClass} htmlFor="arquivoContrato">
+          Contrato assinado (PDF)
+        </label>
+        {defaultValues?.arquivoContratoUrl && (
+          <p className="mb-2 text-sm">
+            <a
+              href={defaultValues.arquivoContratoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={linkClass}
+            >
+              Ver arquivo atual
+              {defaultValues.arquivoContratoNome ? `: ${defaultValues.arquivoContratoNome}` : ""}
+            </a>
+          </p>
+        )}
+        <input
+          id="arquivoContrato"
+          name="arquivoContrato"
+          type="file"
+          accept="application/pdf"
+          className={inputClass}
+        />
+        {defaultValues?.arquivoContratoUrl && (
+          <label className="mt-2 flex items-center gap-1.5 text-sm text-brand-grey">
+            <input type="checkbox" name="removerArquivoContrato" />
+            Remover o arquivo atual (sem enviar outro)
+          </label>
+        )}
+      </div>
 
       <div className="flex gap-3 pt-2">
         <button type="submit" className={buttonPrimaryClass}>
