@@ -52,6 +52,8 @@ function readContratoFormData(formData: FormData) {
 }
 
 function readNovoClienteFormData(formData: FormData) {
+  const diaVencimentoRaw = String(formData.get("clienteNovoDiaVencimento") ?? "").trim();
+
   return {
     nome: String(formData.get("clienteNovoNome") ?? "").trim(),
     cnpj: String(formData.get("clienteNovoCnpj") ?? "").trim() || null,
@@ -59,6 +61,7 @@ function readNovoClienteFormData(formData: FormData) {
     contatoEmail: String(formData.get("clienteNovoContatoEmail") ?? "").trim() || null,
     contatoTelefone: String(formData.get("clienteNovoContatoTelefone") ?? "").trim() || null,
     setor: String(formData.get("clienteNovoSetor") ?? "").trim() || null,
+    diaVencimento: diaVencimentoRaw ? Number(diaVencimentoRaw) : null,
   };
 }
 

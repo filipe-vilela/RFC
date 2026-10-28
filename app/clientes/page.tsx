@@ -56,6 +56,7 @@ export default async function ClientesPage({
                 <th className="px-4 py-2 font-medium">Nome</th>
                 <th className="px-4 py-2 font-medium">Setor</th>
                 <th className="px-4 py-2 font-medium">Contato</th>
+                <th className="px-4 py-2 font-medium">Vencimento NF</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Ações</th>
               </tr>
@@ -71,6 +72,9 @@ export default async function ClientesPage({
                   </td>
                   <td className="px-4 py-3 text-brand-grey">
                     {cliente.contatoNome ?? "—"}
+                  </td>
+                  <td className="px-4 py-3 text-brand-grey">
+                    {cliente.diaVencimento ? `Dia ${cliente.diaVencimento}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-brand-grey">
                     {STATUS_CLIENTE[cliente.status]}

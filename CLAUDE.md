@@ -240,10 +240,15 @@ existente é caso raro e não precisa desse atalho.
   sobrescreve um valor que o usuário já tenha ajustado manualmente no
   Recebimento.
 - O cadastro rápido de cliente novo dentro do formulário de Contrato
-  (`ClienteCampo.tsx`) não tem esse campo — é só um atalho com os dados
-  essenciais. Se o dia de vencimento for definido depois, editando o
-  Cliente, as parcelas pendentes são preenchidas automaticamente nesse
-  momento.
+  (`ClienteCampo.tsx`) também tem esse campo (`clienteNovoDiaVencimento`,
+  lido em `readNovoClienteFormData`) — inicialmente não tinha, mas o
+  usuário pediu pra incluir já que o dia de vencimento é informação comum
+  o bastante pra valer a pena preencher no mesmo passo do cadastro do
+  contrato, não só editando o Cliente depois.
+- Aparece como coluna "Vencimento NF" na listagem de Clientes
+  (`app/clientes/page.tsx`) — antes só existia no formulário de edição,
+  sem dar pra ver de relance qual é o dia de cada cliente sem abrir um
+  por um.
 
 ### Ações em lote e impressão de notas fiscais (Recebimentos)
 
@@ -380,6 +385,30 @@ existente é caso raro e não precisa desse atalho.
   compromisso" mudar de significado só porque o usuário foi ver a
   previsão do mês seguinte. Por isso `hoje` em `getDashboardData` é
   sempre `new Date()`, só `inicioMes`/`inicioProximoMes` usam `mesRef`.
+- Os dois `<select>` são auto-submit (`SelectAutoSubmit.tsx`, client
+  component genérico em `app/components/` — chama `form.requestSubmit()`
+  no `onChange`), igual um BI: mudar o mês ou o ano já atualiza a página
+  sozinho, sem precisar de um botão "Ver" (removido).
+
+## Diagnóstico de duplicidade no calendário
+
+- Se um cliente aparecer repetido mais vezes que o esperado num mesmo dia
+  de atendimento no calendário, a causa mais provável é **múltiplos
+  contratos ativos** do mesmo cliente com o mesmo `diaAtendimento` — o
+  calendário soma um item por contrato que bate com aquele dia da semana
+  (`getDadosCalendario`, `lib/calendario.ts`), isso não é um bug, é a
+  soma correta de N contratos reais. Menos provável, mas possível: várias
+  linhas de `AtendimentoExcecao` cuja `dataNova` cai no mesmo dia (cada
+  uma injeta um item extra), ou duplicidade de verdade na tabela
+  `Contrato` (ex.: formulário enviado duas vezes).
+- `prisma/diagnostico-calendario.ts` — script avulso (não faz parte do
+  app) pra investigar isso: busca um cliente pelo nome (contains,
+  case-insensitive) e lista todos os contratos dele (status,
+  diaAtendimento, frequência, datas) e todas as `AtendimentoExcecao`
+  ligadas a esses contratos. Roda com
+  `npx tsx prisma/diagnostico-calendario.ts "nome do cliente"` — precisa
+  de `DATABASE_URL` no ambiente (local já pega do `.env`; contra produção
+  é só setar a variável antes, igual se faz pra `migrate deploy`).
 
 ## Deploy no Vercel
 
@@ -491,9 +520,14 @@ existente é caso raro e não precisa desse atalho.
       calendário (`<Link>` pra `/agenda/[id]/editar`) — ver "Anexo do
       contrato assinado em PDF" e "Remarcar atendimento arrastando no
       calendário"
-- [x] Navegação de mês no Dashboard (anterior/hoje/próximo), igual ao
-      padrão da relação de notas fiscais — ver "Navegação de mês no
-      Dashboard"
+- [x] Navegação de mês no Dashboard — dois `<select>` (Mês/Ano)
+      auto-submit, estilo BI — ver "Navegação de mês no Dashboard"
+- [x] Dia de vencimento da NF também no cadastro rápido de cliente novo
+      (dentro do formulário de Contrato) e como coluna na listagem de
+      Clientes — ver "Dia de vencimento por cliente"
+- [x] Script de diagnóstico pra duplicidade de atendimento no calendário
+      (`prisma/diagnostico-calendario.ts`) — ver "Diagnóstico de
+      duplicidade no calendário"
 
 ## Comandos úteis
 

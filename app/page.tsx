@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/dashboard";
 import { StatCard } from "@/app/components/StatCard";
+import { SelectAutoSubmit } from "@/app/components/SelectAutoSubmit";
 import { TIPO_COMPROMISSO } from "@/lib/enums";
 import { formatData, formatMoeda } from "@/lib/format";
-import { inputClass, labelClass, buttonSecondaryClass, linkClass } from "@/lib/ui";
+import { inputClass, labelClass, linkClass } from "@/lib/ui";
 import { paramString } from "@/lib/query-params";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +70,7 @@ export default async function DashboardPage({
             <label className={labelClass} htmlFor="mes">
               Mês
             </label>
-            <select
+            <SelectAutoSubmit
               id="mes"
               name="mes"
               defaultValue={mesRef.getUTCMonth() + 1}
@@ -80,13 +81,13 @@ export default async function DashboardPage({
                   {label}
                 </option>
               ))}
-            </select>
+            </SelectAutoSubmit>
           </div>
           <div>
             <label className={labelClass} htmlFor="ano">
               Ano
             </label>
-            <select
+            <SelectAutoSubmit
               id="ano"
               name="ano"
               defaultValue={mesRef.getUTCFullYear()}
@@ -97,11 +98,8 @@ export default async function DashboardPage({
                   {ano}
                 </option>
               ))}
-            </select>
+            </SelectAutoSubmit>
           </div>
-          <button type="submit" className={buttonSecondaryClass}>
-            Ver
-          </button>
           <Link href="/" className={linkClass}>
             Hoje
           </Link>
