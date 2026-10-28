@@ -81,6 +81,7 @@ export default async function ContratosPage({
                 <th className="px-4 py-2 font-medium">Valor</th>
                 <th className="px-4 py-2 font-medium">Periodicidade</th>
                 <th className="px-4 py-2 font-medium">Início</th>
+                <th className="px-4 py-2 font-medium">Vencimento NF</th>
                 <th className="px-4 py-2 font-medium">Status</th>
                 <th className="px-4 py-2 font-medium">Ações</th>
               </tr>
@@ -102,6 +103,9 @@ export default async function ContratosPage({
                   </td>
                   <td className="px-4 py-3 text-brand-grey">
                     {formatData(contrato.dataInicio)}
+                  </td>
+                  <td className="px-4 py-3 text-brand-grey">
+                    {contrato.diaVencimento ? `Dia ${contrato.diaVencimento}` : "—"}
                   </td>
                   <td className="px-4 py-3 text-brand-grey">
                     {STATUS_CONTRATO[contrato.status]}

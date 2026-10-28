@@ -17,6 +17,7 @@ type ContratoDefaultValues = {
   status: string;
   diaAtendimento: string | null;
   frequenciaAtendimento: string;
+  diaVencimento: number | null;
   arquivoContratoUrl?: string | null;
   arquivoContratoNome?: string | null;
   descontos?: {
@@ -221,6 +222,26 @@ export function ContratoForm({
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label className={labelClass} htmlFor="diaVencimento">
+          Dia de vencimento da NF
+        </label>
+        <input
+          id="diaVencimento"
+          name="diaVencimento"
+          type="number"
+          min="1"
+          max="31"
+          placeholder="ex.: 10"
+          defaultValue={defaultValues?.diaVencimento ?? ""}
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-brand-grey">
+          Dia do mês usado para preencher automaticamente a data de emissão
+          de NF dos recebimentos deste contrato.
+        </p>
       </div>
 
       <DescontosCampo defaultValue={defaultValues?.descontos} />

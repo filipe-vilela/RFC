@@ -35,6 +35,7 @@ async function removerArquivoAntigo(url: string | null | undefined) {
 function readContratoFormData(formData: FormData) {
   const dataFimRaw = String(formData.get("dataFim") ?? "").trim();
   const diaAtendimentoRaw = String(formData.get("diaAtendimento") ?? "").trim();
+  const diaVencimentoRaw = String(formData.get("diaVencimento") ?? "").trim();
 
   return {
     numero: String(formData.get("numero") ?? "").trim(),
@@ -48,12 +49,11 @@ function readContratoFormData(formData: FormData) {
     frequenciaAtendimento: String(
       formData.get("frequenciaAtendimento") ?? "SEMANAL",
     ) as FrequenciaAtendimento,
+    diaVencimento: diaVencimentoRaw ? Number(diaVencimentoRaw) : null,
   };
 }
 
 function readNovoClienteFormData(formData: FormData) {
-  const diaVencimentoRaw = String(formData.get("clienteNovoDiaVencimento") ?? "").trim();
-
   return {
     nome: String(formData.get("clienteNovoNome") ?? "").trim(),
     cnpj: String(formData.get("clienteNovoCnpj") ?? "").trim() || null,
@@ -61,7 +61,6 @@ function readNovoClienteFormData(formData: FormData) {
     contatoEmail: String(formData.get("clienteNovoContatoEmail") ?? "").trim() || null,
     contatoTelefone: String(formData.get("clienteNovoContatoTelefone") ?? "").trim() || null,
     setor: String(formData.get("clienteNovoSetor") ?? "").trim() || null,
-    diaVencimento: diaVencimentoRaw ? Number(diaVencimentoRaw) : null,
   };
 }
 
@@ -111,7 +110,6 @@ export async function createContrato(formData: FormData) {
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
       ...contrato,
       descontos,
-      diaVencimentoCliente: cliente.diaVencimento,
     });
   });
 
@@ -134,7 +132,6 @@ export async function updateContrato(id: string, formData: FormData) {
   });
 
   await prisma.$transaction(async (tx) => {
-    const cliente = await tx.cliente.findUniqueOrThrow({ where: { id: clienteId } });
     await tx.desconto.deleteMany({ where: { contratoId: id } });
     const contrato = await tx.contrato.update({
       where: { id },
@@ -152,7 +149,6 @@ export async function updateContrato(id: string, formData: FormData) {
     await sincronizarRecebimentosAutomaticos(tx, contrato.id, {
       ...contrato,
       descontos,
-      diaVencimentoCliente: cliente.diaVencimento,
     });
   });
 
@@ -194,7 +190,7 @@ export async function renovarContrato(id: string) {
   await prisma.$transaction(async (tx) => {
     const contrato = await tx.contrato.findUniqueOrThrow({
       where: { id },
-      include: { descontos: true, cliente: true },
+      include: { descontos: true },
     });
 
     const hoje = new Date();
@@ -215,7 +211,6 @@ export async function renovarContrato(id: string) {
     await sincronizarRecebimentosAutomaticos(tx, id, {
       ...contratoAtualizado,
       descontos: contrato.descontos,
-      diaVencimentoCliente: contrato.cliente.diaVencimento,
     });
   });
 

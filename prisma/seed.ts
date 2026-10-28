@@ -13,7 +13,6 @@ async function main() {
       contatoNome: "Marina Souza",
       contatoEmail: "marina@alfacomercio.com.br",
       setor: "Varejo alimentício",
-      diaVencimento: 5,
       status: "ATIVO",
     },
   });
@@ -25,7 +24,6 @@ async function main() {
       contatoNome: "Roberto Lima",
       contatoEmail: "roberto@betaindustria.com.br",
       setor: "Indústria metalúrgica",
-      diaVencimento: 10,
       status: "ATIVO",
     },
   });
@@ -51,6 +49,7 @@ async function main() {
       status: "ATIVO",
       diaAtendimento: "QUINTA",
       frequenciaAtendimento: "SEMANAL",
+      diaVencimento: 5,
       descontos: {
         create: [
           { percentual: 20, mesInicio: 1, mesFim: 3 },
@@ -72,6 +71,7 @@ async function main() {
       status: "ATIVO",
       diaAtendimento: "SEGUNDA",
       frequenciaAtendimento: "QUINZENAL",
+      diaVencimento: 10,
     },
     include: { descontos: true },
   });
@@ -94,14 +94,8 @@ async function main() {
   // pela mesma função usada pelo app, em vez de valores fixos — assim o
   // seed reflete o comportamento de verdade do sistema.
   await prisma.$transaction(async (tx) => {
-    await sincronizarRecebimentosAutomaticos(tx, contratoA.id, {
-      ...contratoA,
-      diaVencimentoCliente: clienteA.diaVencimento,
-    });
-    await sincronizarRecebimentosAutomaticos(tx, contratoB.id, {
-      ...contratoB,
-      diaVencimentoCliente: clienteB.diaVencimento,
-    });
+    await sincronizarRecebimentosAutomaticos(tx, contratoA.id, contratoA);
+    await sincronizarRecebimentosAutomaticos(tx, contratoB.id, contratoB);
     await sincronizarRecebimentosAutomaticos(tx, contratoC.id, contratoC);
   });
 

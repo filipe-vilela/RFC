@@ -83,17 +83,16 @@ Tailwind em `app/globals.css` (`@theme inline`):
 
 ## Modelo de dados (`prisma/schema.prisma`)
 
-- **Cliente** — nome, CNPJ, contato, setor, `diaVencimento` (dia do mês
-  usado para calcular a data de emissão de NF, ver "Dia de vencimento por
-  cliente"), status (ativo/inativo)
+- **Cliente** — nome, CNPJ, contato, setor, status (ativo/inativo)
 - **Contrato** — vinculado a um Cliente; número, escopo, valor,
   periodicidade (mensal/trimestral/anual/único/por fase/indeterminado),
   data início/fim, status (ativo/encerrado/suspenso), `diaAtendimento`
   (enum `DiaSemana`, selecionado — não é mais texto livre),
-  `frequenciaAtendimento` (semanal/quinzenal/mensal), `renovadoAte`
-  (ver "Renovação de contrato"), `arquivoContratoUrl`/`arquivoContratoNome`
-  (PDF do contrato assinado, opcional — ver "Anexo do contrato assinado
-  em PDF")
+  `frequenciaAtendimento` (semanal/quinzenal/mensal), `diaVencimento`
+  (dia do mês usado para calcular a data de emissão de NF, ver "Dia de
+  vencimento por contrato"), `renovadoAte` (ver "Renovação de contrato"),
+  `arquivoContratoUrl`/`arquivoContratoNome` (PDF do contrato assinado,
+  opcional — ver "Anexo do contrato assinado em PDF")
 - **Desconto** — vinculado a um Contrato; `tipo` (percentual ou valor
   fixo em R$), `percentual`/`valorFixo` (só um dos dois é usado, conforme
   `tipo`), `mesInicio`, `mesFim` (mês corrido desde o início do contrato)
@@ -223,32 +222,30 @@ existente é caso raro e não precisa desse atalho.
   a semana de `dataInicio`; mensal repete só na mesma "ocorrência do mês"
   (1ª, 2ª, 3ª... semana) em que `dataInicio` cai.
 
-### Dia de vencimento por cliente (`Cliente.diaVencimento`)
+### Dia de vencimento por contrato (`Contrato.diaVencimento`)
 
-- Cadastrado uma vez no Cliente (não no Contrato nem no Recebimento) —
-  o usuário pediu para não ter que digitar a data de emissão de NF
-  parcela por parcela. `montarProgramacaoRecebimentos` recebe
-  `diaVencimentoCliente` e calcula `dataEmissaoNF` de cada parcela usando
-  o mês da própria `dataPrevista` com esse dia (ajustado para o último
-  dia do mês quando ele não existir, ex. dia 31 em fevereiro).
-- Todo ponto que chama `sincronizarRecebimentosAutomaticos`
-  (`createContrato`, `updateContrato`, `renovarContrato`,
-  `updateCliente`) busca o `diaVencimento` do Cliente e passa adiante.
-  `updateCliente` propositalmente re-sincroniza todos os contratos do
-  cliente para preencher retroativamente as parcelas pendentes que ainda
-  não tinham NF — mas só quando `dataEmissaoNF` está `NULL`; nunca
-  sobrescreve um valor que o usuário já tenha ajustado manualmente no
-  Recebimento.
-- O cadastro rápido de cliente novo dentro do formulário de Contrato
-  (`ClienteCampo.tsx`) também tem esse campo (`clienteNovoDiaVencimento`,
-  lido em `readNovoClienteFormData`) — inicialmente não tinha, mas o
-  usuário pediu pra incluir já que o dia de vencimento é informação comum
-  o bastante pra valer a pena preencher no mesmo passo do cadastro do
-  contrato, não só editando o Cliente depois.
-- Aparece como coluna "Vencimento NF" na listagem de Clientes
-  (`app/clientes/page.tsx`) — antes só existia no formulário de edição,
-  sem dar pra ver de relance qual é o dia de cada cliente sem abrir um
-  por um.
+- Cadastrado no Contrato (não no Cliente) — ficou no Cliente numa primeira
+  versão, mas o usuário percebeu que um mesmo cliente pode ter vários
+  contratos com vencimentos de NF diferentes (ex.: Elson's com 2
+  contratos, cada um com seu próprio dia) e que manter o campo no Cliente
+  tornava impossível diferenciar isso. Migrado de `Cliente.diaVencimento`
+  para `Contrato.diaVencimento` (migration
+  `20261028131556_mover_dia_vencimento_para_contrato`, com um `UPDATE` de
+  backfill que copia o valor do Cliente pra todos os contratos dele antes
+  de remover a coluna — preserva o dado existente, que o usuário pode
+  depois diferenciar contrato a contrato).
+- `montarProgramacaoRecebimentos`/`sincronizarRecebimentosAutomaticos`
+  recebem `diaVencimento` como parte do próprio objeto do contrato (não
+  mais um parâmetro separado vindo do Cliente) e calculam `dataEmissaoNF`
+  de cada parcela usando o mês da própria `dataPrevista` com esse dia
+  (ajustado para o último dia do mês quando ele não existir, ex. dia 31
+  em fevereiro).
+- Campo no formulário de Contrato (`ContratoForm.tsx`), ao lado dos
+  descontos — não mais no formulário de Cliente nem no cadastro rápido de
+  cliente novo dentro do formulário de Contrato (`ClienteCampo.tsx`, que
+  só cuida dos dados do Cliente em si).
+- Aparece como coluna "Vencimento NF" na listagem de Contratos
+  (`app/contratos/page.tsx`), não mais na de Clientes.
 
 ### Ações em lote e impressão de notas fiscais (Recebimentos)
 
@@ -259,8 +256,8 @@ existente é caso raro e não precisa desse atalho.
   "Excluir"). `SelecionarTodos.tsx` e `ConfirmButton.tsx` são os únicos
   client components envolvidos.
 - `Recebimento.dataEmissaoNF` é preenchida automaticamente a partir de
-  `Cliente.diaVencimento` (dia do mês cadastrado no Cliente — ver
-  "Dia de vencimento por cliente"), mas continua editável por parcela
+  `Contrato.diaVencimento` (dia do mês cadastrado no Contrato — ver
+  "Dia de vencimento por contrato"), mas continua editável por parcela
   para exceções. `/recebimentos/notas-fiscais` lista, por mês, os
   recebimentos previstos ordenados por essa data, com um botão de
   impressão (`window.print()` + variante `print:` do Tailwind escondendo
@@ -536,12 +533,12 @@ existente é caso raro e não precisa desse atalho.
       calendário"
 - [x] Navegação de mês no Dashboard — dois `<select>` (Mês/Ano)
       auto-submit, estilo BI — ver "Navegação de mês no Dashboard"
-- [x] Dia de vencimento da NF também no cadastro rápido de cliente novo
-      (dentro do formulário de Contrato) e como coluna na listagem de
-      Clientes — ver "Dia de vencimento por cliente"
 - [x] Script de diagnóstico pra duplicidade de atendimento no calendário
       (`prisma/diagnostico-calendario.ts`) — ver "Diagnóstico de
       duplicidade no calendário"
+- [x] Dia de vencimento da NF movido do Cliente para o Contrato (um
+      cliente pode ter contratos com vencimentos diferentes) — ver
+      "Dia de vencimento por contrato"
 
 ## Comandos úteis
 

@@ -53,9 +53,9 @@ function aplicarDesconto(
  * anual — assim "20% nos 3 primeiros meses" cobre certinho a 1ª parcela
  * trimestral, e "10% do 4º ao 6º mês" cobre a 2ª.
  *
- * `diaVencimentoCliente` (cadastrado no Cliente) preenche a data de emissão
- * de NF de cada parcela automaticamente, usando o mês da própria parcela —
- * assim o usuário não precisa digitar isso parcela por parcela.
+ * `diaVencimento` (cadastrado no próprio Contrato) preenche a data de
+ * emissão de NF de cada parcela automaticamente, usando o mês da própria
+ * parcela — assim o usuário não precisa digitar isso parcela por parcela.
  */
 export function montarProgramacaoRecebimentos(contrato: {
   valor: number;
@@ -64,9 +64,9 @@ export function montarProgramacaoRecebimentos(contrato: {
   dataFim: Date | null;
   renovadoAte?: Date | null;
   descontos?: DescontoContrato[];
-  diaVencimentoCliente?: number | null;
+  diaVencimento?: number | null;
 }): ItemAgenda[] {
-  const { valor, periodicidade, dataInicio, dataFim, diaVencimentoCliente } = contrato;
+  const { valor, periodicidade, dataInicio, dataFim, diaVencimento } = contrato;
   const descontos = contrato.descontos ?? [];
 
   if (periodicidade === "UNICO") {
@@ -74,7 +74,7 @@ export function montarProgramacaoRecebimentos(contrato: {
       {
         dataPrevista: dataInicio,
         valorPrevisto: aplicarDesconto(valor, 1, descontos),
-        dataEmissaoNF: calcularDataEmissaoNF(dataInicio, diaVencimentoCliente),
+        dataEmissaoNF: calcularDataEmissaoNF(dataInicio, diaVencimento),
       },
     ];
   }
@@ -94,7 +94,7 @@ export function montarProgramacaoRecebimentos(contrato: {
     programacao.push({
       dataPrevista: dataAtual,
       valorPrevisto: aplicarDesconto(valor, mesDaParcela, descontos),
-      dataEmissaoNF: calcularDataEmissaoNF(dataAtual, diaVencimentoCliente),
+      dataEmissaoNF: calcularDataEmissaoNF(dataAtual, diaVencimento),
     });
     dataAtual = addMeses(dataAtual, intervaloMeses);
     mesDaParcela += intervaloMeses;
@@ -118,7 +118,7 @@ export async function sincronizarRecebimentosAutomaticos(
     dataFim: Date | null;
     renovadoAte?: Date | null;
     descontos?: DescontoContrato[];
-    diaVencimentoCliente?: number | null;
+    diaVencimento?: number | null;
   },
 ) {
   const programacao = montarProgramacaoRecebimentos(contrato);

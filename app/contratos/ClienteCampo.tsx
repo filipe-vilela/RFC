@@ -117,24 +117,6 @@ export function ClienteCampo({
             </label>
             <input id="clienteNovoSetor" name="clienteNovoSetor" className={inputClass} />
           </div>
-          <div>
-            <label className={labelClass} htmlFor="clienteNovoDiaVencimento">
-              Dia de vencimento da NF
-            </label>
-            <input
-              id="clienteNovoDiaVencimento"
-              name="clienteNovoDiaVencimento"
-              type="number"
-              min="1"
-              max="31"
-              placeholder="ex.: 10"
-              className={inputClass}
-            />
-            <p className="mt-1 text-xs text-brand-grey">
-              Dia do mês usado para preencher automaticamente a data de emissão
-              de NF dos recebimentos deste cliente.
-            </p>
-          </div>
         </div>
       )}
     </div>
