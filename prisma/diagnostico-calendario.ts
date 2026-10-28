@@ -43,6 +43,19 @@ async function main() {
         `  - contratoId=${e.contratoId} | dataOriginal=${e.dataOriginal.toISOString().slice(0, 10)} | dataNova=${e.dataNova.toISOString().slice(0, 10)}`,
       );
     }
+
+    console.log(`Recebimentos por contrato:`);
+    for (const c of cliente.contratos) {
+      const recebimentos = await prisma.recebimento.findMany({
+        where: { contratoId: c.id },
+      });
+      const totalPrevisto = recebimentos.reduce((soma, r) => soma + r.valorPrevisto, 0);
+      const pagos = recebimentos.filter((r) => r.status === "PAGO");
+      console.log(
+        `  - contrato ${c.numero} (id=${c.id}): ${recebimentos.length} parcela(s), ` +
+          `total previsto R$ ${totalPrevisto.toFixed(2)}, ${pagos.length} já paga(s)`,
+      );
+    }
   }
 }
 
