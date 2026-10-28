@@ -404,11 +404,25 @@ existente é caso raro e não precisa desse atalho.
 - `prisma/diagnostico-calendario.ts` — script avulso (não faz parte do
   app) pra investigar isso: busca um cliente pelo nome (contains,
   case-insensitive) e lista todos os contratos dele (status,
-  diaAtendimento, frequência, datas) e todas as `AtendimentoExcecao`
-  ligadas a esses contratos. Roda com
+  diaAtendimento, frequência, datas), todas as `AtendimentoExcecao`
+  ligadas a esses contratos, e quantos recebimentos cada contrato gerou
+  (pra flagrar se a duplicidade também inflou valores previstos, não só
+  a exibição no calendário). Roda com
   `npx tsx prisma/diagnostico-calendario.ts "nome do cliente"` — precisa
   de `DATABASE_URL` no ambiente (local já pega do `.env`; contra produção
   é só setar a variável antes, igual se faz pra `migrate deploy`).
+- **Caso real já resolvido** (cliente "ELSON'S", outubro/2026): 3
+  contratos "012/2026" idênticos (duplicados por reenvio do formulário)
+  mais um "012/2026" genuíno em outro dia da semana — cada duplicata
+  tinha gerado seu próprio conjunto de recebimentos, inflando o valor
+  previsto do cliente em 3x. Resolvido com um script avulso específico
+  (apagado depois de usado, não ficou no repo) que excluía os contratos
+  duplicados + seus recebimentos numa transação, só depois de confirmar
+  que nenhum recebimento envolvido já estava `PAGO`. Pra um caso
+  parecido no futuro: usar `diagnostico-calendario.ts` pra confirmar a
+  causa, confirmar com o usuário qual registro é o correto antes de
+  excluir qualquer coisa, e sempre checar `status !== "PAGO"` antes de
+  apagar um recebimento.
 
 ## Deploy no Vercel
 
